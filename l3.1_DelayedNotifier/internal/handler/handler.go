@@ -18,6 +18,10 @@ func (h *Handler) Router() *ginext.Engine {
 	return router
 }
 
-func (h *Handler) Notify(c *ginext.Context)      {}
+func (h *Handler) Notify(c *ginext.Context) {
+
+}
+
 func (h *Handler) NotifyGetID(c *ginext.Context) {}
-func (h *Handler) Delete(c *ginext.Context)      {}
+
+func (h *Handler) Delete(c *ginext.Context) {}
