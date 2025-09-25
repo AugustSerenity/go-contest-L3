@@ -4,12 +4,14 @@ import (
 	"time"
 
 	"github.com/wb-go/wbf/rabbitmq"
+	"github.com/wb-go/wbf/zlog"
 
 	"github.com/AugustSerenity/go-contest-L3/l3.1/internal/config"
 	"github.com/AugustSerenity/go-contest-L3/l3.1/internal/handler"
+	"github.com/AugustSerenity/go-contest-L3/l3.1/internal/queue/consumer"
 	"github.com/AugustSerenity/go-contest-L3/l3.1/internal/queue/producer"
 	"github.com/AugustSerenity/go-contest-L3/l3.1/internal/service"
-	"github.com/wb-go/wbf/zlog"
+	"github.com/AugustSerenity/go-contest-L3/l3.1/internal/storage"
 )
 
 func main() {
@@ -41,7 +43,13 @@ func main() {
 	pub := rabbitmq.NewPublisher(ch, "")
 	prod := producer.New(pub, cfg.RabbitMQ.Queue, cfg.RabbitMQ.Retry)
 
-	svc := service.New(prod)
+	store := storage.New()
+	svc := service.New(prod, store)
+
+	consCfg := rabbitmq.NewConsumerConfig(cfg.RabbitMQ.Queue)
+	rmqConsumer := rabbitmq.NewConsumer(ch, consCfg)
+	cons := consumer.New(rmqConsumer, svc)
+	cons.Start()
 
 	h := handler.New(svc)
 

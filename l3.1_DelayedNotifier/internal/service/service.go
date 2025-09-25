@@ -7,11 +7,11 @@ import (
 )
 
 type Service struct {
-	producer producer.ProducerService
+	producer *producer.Producer
 	storage  Storage
 }
 
-func New(p producer.ProducerService, st Storage) *Service {
+func New(p *producer.Producer, st Storage) *Service {
 	return &Service{
 		producer: p,
 		storage:  st,
@@ -25,4 +25,9 @@ func (s *Service) CreateNotification(ctx *ginext.Context, notification model.Not
 	}
 
 	return nil
+}
+
+func (s *Service) ProcessNotification(notification model.Notification) {
+	notification.Status = "processed"
+	s.storage.Set(notification)
 }
