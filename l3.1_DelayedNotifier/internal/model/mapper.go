@@ -11,7 +11,7 @@ func CastToNotification(request dto.NotificationRequest) Notification {
 	return Notification{
 		ID:        uuid.New().String(),
 		Message:   request.Message,
-		SendAt:    request.SendAt,
+		SendAt:    request.SendAt.UTC(),
 		CreatedAt: time.Now().UTC(),
 		Status:    "scheduled",
 	}

@@ -2,10 +2,11 @@ package consumer
 
 import (
 	"encoding/json"
-	"log"
+	"time"
 
 	"github.com/AugustSerenity/go-contest-L3/l3.1/internal/model"
 	"github.com/wb-go/wbf/rabbitmq"
+	"github.com/wb-go/wbf/zlog"
 )
 
 type Consumer struct {
@@ -27,8 +28,17 @@ func (c *Consumer) Start() {
 		for msg := range msgChan {
 			var n model.Notification
 			if err := json.Unmarshal(msg, &n); err != nil {
-				log.Printf("failed to decode message: %v", err)
+				zlog.Logger.Error().Err(err).Msg("failed to decode message")
 				continue
+			}
+
+			delay := time.Until(n.SendAt)
+			if delay > 0 {
+				zlog.Logger.Info().
+					Str("id", n.ID).
+					Dur("delay", delay).
+					Msg("delaying processing of notification")
+				time.Sleep(delay)
 			}
 
 			c.service.ProcessNotification(n)
@@ -37,7 +47,7 @@ func (c *Consumer) Start() {
 
 	go func() {
 		if err := c.consumer.Consume(msgChan); err != nil {
-			log.Fatalf("failed to consume: %v", err)
+			zlog.Logger.Fatal().Err(err).Msg("failed to consume")
 		}
 	}()
 }
