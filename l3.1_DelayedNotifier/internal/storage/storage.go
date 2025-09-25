@@ -31,3 +31,4 @@ func (st *Storage) Get(id string) (model.Notification, bool) {
 
 	return notification, ok
 }
+ 

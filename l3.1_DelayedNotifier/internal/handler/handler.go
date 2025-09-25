@@ -51,6 +51,20 @@ func (h *Handler) Notify(c *ginext.Context) {
 	})
 }
 
-func (h *Handler) NotifyGetID(c *ginext.Context) {}
+func (h *Handler) NotifyGetID(c *ginext.Context) {
+	id := c.Param("id")
+
+	notify, err := h.service.GetStatusByID(c, id)
+	if err != nil {
+		zlog.Logger.Error().Err(err).Msg("failed to find status by notification")
+		tools.SendError(c, 503, "failed to get id")
+		return
+	}
+
+	tools.SendSuccess(c, 202, ginext.H{
+		"id":     notify.ID,
+		"status": notify.Status,
+	})
+}
 
 func (h *Handler) Delete(c *ginext.Context) {}

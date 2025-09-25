@@ -1,6 +1,8 @@
 package service
 
 import (
+	"fmt"
+
 	"github.com/AugustSerenity/go-contest-L3/l3.1/internal/model"
 	"github.com/AugustSerenity/go-contest-L3/l3.1/internal/queue/producer"
 	"github.com/wb-go/wbf/ginext"
@@ -30,4 +32,13 @@ func (s *Service) CreateNotification(ctx *ginext.Context, notification model.Not
 func (s *Service) ProcessNotification(notification model.Notification) {
 	notification.Status = "processed"
 	s.storage.Set(notification)
+}
+
+func (s *Service) GetStatusByID(ctx *ginext.Context, id string) (model.Notification, error) {
+	res, ok := s.storage.Get(id)
+	if !ok {
+		return model.Notification{}, fmt.Errorf("id not found")
+	}
+
+	return res, nil
 }
