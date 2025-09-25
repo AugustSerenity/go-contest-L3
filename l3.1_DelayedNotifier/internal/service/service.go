@@ -8,11 +8,13 @@ import (
 
 type Service struct {
 	producer producer.ProducerService
+	storage  Storage
 }
 
-func New(p producer.ProducerService) *Service {
+func New(p producer.ProducerService, st Storage) *Service {
 	return &Service{
 		producer: p,
+		storage:  st,
 	}
 }
 
