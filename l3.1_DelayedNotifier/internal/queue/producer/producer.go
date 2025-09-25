@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/AugustSerenity/go-contest-L3/l3.1/internal/config"
 	"github.com/AugustSerenity/go-contest-L3/l3.1/internal/model"
 	"github.com/wb-go/wbf/rabbitmq"
 	"github.com/wb-go/wbf/retry"
@@ -12,12 +13,14 @@ import (
 type Producer struct {
 	publisher *rabbitmq.Publisher
 	queueName string
+	retryCfg  config.RabbitRetryConfig
 }
 
-func New(p *rabbitmq.Publisher, queueName string) *Producer {
+func New(p *rabbitmq.Publisher, queueName string, retryCfg config.RabbitRetryConfig) *Producer {
 	return &Producer{
 		publisher: p,
 		queueName: queueName,
+		retryCfg:  retryCfg,
 	}
 }
 
@@ -32,9 +35,9 @@ func (p *Producer) Publish(n model.Notification) error {
 		p.queueName,
 		"application/json",
 		retry.Strategy{
-			Attempts: 3,
-			Delay:    300 * time.Millisecond,
-			Backoff:  2.0,
+			Attempts: p.retryCfg.Attempts,
+			Delay:    time.Duration(p.retryCfg.DelayMS) * time.Millisecond,
+			Backoff:  p.retryCfg.Backoff,
 		},
 	)
 }
