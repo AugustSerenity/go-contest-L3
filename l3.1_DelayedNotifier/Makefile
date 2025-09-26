@@ -1,6 +1,9 @@
 run:
 	docker-compose up -d
 
+test:
+	go test -cover ./...
+	
 race-test:
 	go test -race ./...
 
