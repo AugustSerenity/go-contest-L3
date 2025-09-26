@@ -33,15 +33,19 @@ func (c *Consumer) Start() {
 			}
 
 			delay := time.Until(n.SendAt)
-			if delay > 0 {
+			if delay <= 0 {
+				zlog.Logger.Info().
+					Str("id", n.ID).
+					Msg("sending overdue notification immediately")
+				c.service.ProcessNotification(n)
+			} else {
 				zlog.Logger.Info().
 					Str("id", n.ID).
 					Dur("delay", delay).
 					Msg("delaying processing of notification")
 				time.Sleep(delay)
+				c.service.ProcessNotification(n)
 			}
-
-			c.service.ProcessNotification(n)
 		}
 	}()
 

@@ -43,6 +43,13 @@ func (s *Service) ProcessNotification(notification model.Notification) {
 		return
 	}
 
+	if storedNotif.Status == "processed" {
+		zlog.Logger.Info().
+			Str("id", notification.ID).
+			Msg("notification already processed — skipping")
+		return
+	}
+
 	if storedNotif.Status == "canceled" {
 		zlog.Logger.Info().
 			Str("id", notification.ID).

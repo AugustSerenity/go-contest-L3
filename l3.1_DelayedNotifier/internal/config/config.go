@@ -47,3 +47,4 @@ func (c *ConfigLoader) Load(path string) error {
 func (c *ConfigLoader) Unmarshal(rawVal any) error {
 	return c.v.Unmarshal(rawVal)
 }
+

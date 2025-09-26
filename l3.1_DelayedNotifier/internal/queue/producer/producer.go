@@ -8,6 +8,7 @@ import (
 	"github.com/AugustSerenity/go-contest-L3/l3.1/internal/model"
 	"github.com/wb-go/wbf/rabbitmq"
 	"github.com/wb-go/wbf/retry"
+	"github.com/wb-go/wbf/zlog"
 )
 
 type Producer struct {
@@ -27,6 +28,10 @@ func New(p *rabbitmq.Publisher, queueName string, retryCfg config.RabbitRetryCon
 func (p *Producer) Publish(n model.Notification) error {
 	body, err := json.Marshal(&n)
 	if err != nil {
+		zlog.Logger.Error().
+			Err(err).
+			Str("notification_id", n.ID).
+			Msg("failed to marshal notification")
 		return err
 	}
 
