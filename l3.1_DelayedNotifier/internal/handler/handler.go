@@ -25,6 +25,11 @@ func (h *Handler) Router() *ginext.Engine {
 	router.GET("/notify/:id", h.NotifyGetID)
 	router.DELETE("/notify/:id", h.Delete)
 
+	router.Static("/ui", "./web")
+	router.GET("/", func(c *ginext.Context) {
+		c.Redirect(302, "/ui/index.html")
+	})
+
 	return router
 }
 
