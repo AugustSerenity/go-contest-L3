@@ -67,4 +67,15 @@ func (h *Handler) NotifyGetID(c *ginext.Context) {
 	})
 }
 
-func (h *Handler) Delete(c *ginext.Context) {}
+func (h *Handler) Delete(c *ginext.Context) {
+	id := c.Param("id")
+	err := h.service.DeleteNotify(c, id)
+	if err != nil {
+		zlog.Logger.Error().Err(err).Msg("failed to delete notification")
+		tools.SendError(c, 404, "failed to delete notification")
+		return
+	}
+	tools.SendSuccess(c, 200, ginext.H{
+		"status": "canceled",
+	})
+}

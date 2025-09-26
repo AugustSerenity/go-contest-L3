@@ -8,4 +8,5 @@ import (
 type Service interface {
 	CreateNotification(*ginext.Context, model.Notification) error
 	GetStatusByID(*ginext.Context, string) (model.Notification, error)
+	DeleteNotify(*ginext.Context, string) error
 }

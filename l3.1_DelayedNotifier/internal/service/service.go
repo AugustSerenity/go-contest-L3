@@ -35,8 +35,27 @@ func (s *Service) CreateNotification(ctx *ginext.Context, notification model.Not
 }
 
 func (s *Service) ProcessNotification(notification model.Notification) {
+	storedNotif, ok := s.storage.Get(notification.ID)
+	if !ok {
+		zlog.Logger.Warn().
+			Str("id", notification.ID).
+			Msg("notification not found in storage — skipping")
+		return
+	}
+
+	if storedNotif.Status == "canceled" {
+		zlog.Logger.Info().
+			Str("id", notification.ID).
+			Msg("notification was canceled — skipping processing")
+		return
+	}
+
 	notification.Status = "processed"
 	s.storage.Set(notification)
+
+	zlog.Logger.Info().
+		Str("id", notification.ID).
+		Msg("notification processed successfully")
 }
 
 func (s *Service) GetStatusByID(ctx *ginext.Context, id string) (model.Notification, error) {
@@ -46,4 +65,15 @@ func (s *Service) GetStatusByID(ctx *ginext.Context, id string) (model.Notificat
 	}
 
 	return res, nil
+}
+
+func (s *Service) DeleteNotify(ctx *ginext.Context, id string) error {
+	notif, ok := s.storage.Get(id)
+	if !ok {
+		return fmt.Errorf("notification not found")
+	}
+
+	notif.Status = "canceled"
+	s.storage.Set(notif)
+	return nil
 }
