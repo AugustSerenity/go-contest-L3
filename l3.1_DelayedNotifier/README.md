@@ -100,3 +100,32 @@ make test
 ![Ответ от сервера](docs/image/Ответ%20от%20сервера.png)
 
 #### создание события с помощью `curl` запросов 
+Создание уведомления
+```
+curl -X POST http://localhost:8080/notify \
+-H "Content-Type: application/json" \
+-d '{
+  "message": "Напоминание о встрече",
+  "send_at": "2026-09-29T13:05:00Z"
+}'
+```
+ответ
+```
+{"result":{"id":"c9bcfcd7-66de-462d-83e5-117c8d13a19e","status":"scheduled"}}%
+```
+Проверить статус
+```
+curl http://localhost:8080/notify/<notification_id>
+```
+ответ
+```
+{"result":{"id":"<notification_id>","status":"notification_status"}}% 
+```
+Отменить уведомление
+```
+curl -X DELETE http://localhost:8080/notify/<notification_id>
+```
+ответ
+```
+{"result":{"status":"canceled"}}% 
+```
