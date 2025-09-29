@@ -17,5 +17,5 @@ func New(st Storage) *Service {
 }
 
 func (s *Service) Shorten(c ginext.Context, urlRequest dto.RequestURL) (model.URL, error) {
-
+	
 }
