@@ -1,6 +1,10 @@
 package handler
 
-import "github.com/wb-go/wbf/ginext"
+import (
+	"github.com/AugustSerenity/go-contest-L3/l3.2/internal/dto"
+	"github.com/AugustSerenity/go-contest-L3/l3.2/internal/handler/tools"
+	"github.com/wb-go/wbf/ginext"
+)
 
 type Handler struct{}
 
@@ -17,7 +21,15 @@ func (h *Handler) Router() *ginext.Engine {
 	return router
 }
 
-func (h *Handler) ShortenCreate(c *ginext.Context) {}
+func (h *Handler) ShortenCreate(c *ginext.Context) {
+	var urlRequest dto.RequestURL
+	err := c.BindJSON(&urlRequest)
+	if err != nil {
+		tools.SendError(c, 400, err.Error())
+		return
+	}
+
+}
 
 func (h *Handler) ClickShortLink(c *ginext.Context) {}
 func (h *Handler) Getanalytics(c *ginext.Context)   {}
