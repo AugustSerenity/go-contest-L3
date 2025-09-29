@@ -4,12 +4,17 @@ import (
 	"github.com/AugustSerenity/go-contest-L3/l3.2/internal/dto"
 	"github.com/AugustSerenity/go-contest-L3/l3.2/internal/handler/tools"
 	"github.com/wb-go/wbf/ginext"
+	"github.com/wb-go/wbf/zlog"
 )
 
-type Handler struct{}
+type Handler struct {
+	service Service
+}
 
-func New() *Handler {
-	return &Handler{}
+func New(s Service) *Handler {
+	return &Handler{
+		service: s,
+	}
 }
 
 func (h *Handler) Router() *ginext.Engine {
@@ -28,6 +33,16 @@ func (h *Handler) ShortenCreate(c *ginext.Context) {
 		tools.SendError(c, 400, err.Error())
 		return
 	}
+	urlShorten, err := h.service.Shorten(c, urlRequest)
+	if err != nil {
+		zlog.Logger.Error().Err(err).Msg("failed to shorten url")
+		tools.SendError(c, 500, "failed to shorten url")
+		return
+	}
+
+	tools.SendSuccess(c, 202, ginext.H{
+		"short_url": urlShorten.ShortURL,
+	})
 
 }
 
