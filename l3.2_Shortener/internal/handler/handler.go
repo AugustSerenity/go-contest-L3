@@ -33,7 +33,7 @@ func (h *Handler) ShortenCreate(c *ginext.Context) {
 		tools.SendError(c, 400, err.Error())
 		return
 	}
-	urlShorten, err := h.service.Shorten(c, urlRequest)
+	urlShorten, err := h.service.Shorten(c.Request.Context(), urlRequest)
 	if err != nil {
 		zlog.Logger.Error().Err(err).Msg("failed to shorten url")
 		tools.SendError(c, 500, "failed to shorten url")
