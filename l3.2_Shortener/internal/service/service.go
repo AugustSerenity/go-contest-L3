@@ -60,10 +60,14 @@ func (s *Service) generateUniqueShortCode(ctx context.Context) (string, error) {
 
 	for i := 0; i < maxAttempts; i++ {
 		code := generateShortURL()
+		zlog.Logger.Info().Str("code", code).Msg("Generated short code")
+
 		exists, err := s.storage.ExistsByShortCode(ctx, code)
 		if err != nil {
 			return "", err
 		}
+		zlog.Logger.Info().Bool("exists", exists).Msg("Exists check result")
+
 		if !exists {
 			return code, nil
 		}
@@ -73,9 +77,12 @@ func (s *Service) generateUniqueShortCode(ctx context.Context) (string, error) {
 }
 
 func generateShortURL() string {
-	b := make([]byte, 4)
+	b := make([]byte, 5)
 	if _, err := rand.Read(b); err != nil {
+		zlog.Logger.Error().Err(err).Msg("rand.Read error")
 		return ""
 	}
-	return base64.URLEncoding.EncodeToString(b)[:6]
+	code := base64.URLEncoding.EncodeToString(b)[:7]
+	zlog.Logger.Info().Str("short_url", code).Msg("Generated short URL")
+	return code
 }

@@ -8,7 +8,7 @@ import (
 
 type Config struct {
 	Server Server `mapstructure:"server"`
-	DB     DB     `mapstructure:"postgres"`
+	DB     DB     `mapstructure:"db"`
 }
 
 type Server struct {
@@ -19,11 +19,11 @@ type Server struct {
 }
 
 type DB struct {
-	Host     string `mapstructure:"localhost"`
-	Port     string `mapstructure:"5432"`
-	Username string `mapstructure:"postgres"`
-	Name     string `mapstructure:"market"`
-	Password string `mapstructure:"postgres"`
+	Host     string `mapstructure:"host"`
+	Port     string `mapstructure:"port"`
+	Username string `mapstructure:"username"`
+	Name     string `mapstructure:"name"`
+	Password string `mapstructure:"password"`
 }
 
 type ConfigLoader struct {

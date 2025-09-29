@@ -23,6 +23,11 @@ func (h *Handler) Router() *ginext.Engine {
 	router.POST("/shorten", h.ShortenCreate)
 	router.GET("/s/:short_url", h.ClickShortLink)
 	router.GET("/analytics/:short_url", h.Getanalytics)
+
+	router.Static("/ui", "./web")
+	router.GET("/", func(c *ginext.Context) {
+		c.Redirect(302, "/ui/index.html")
+	})
 	return router
 }
 

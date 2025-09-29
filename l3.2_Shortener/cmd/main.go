@@ -2,23 +2,25 @@ package main
 
 import (
 	"github.com/AugustSerenity/go-contest-L3/l3.2/internal/config"
+	"github.com/AugustSerenity/go-contest-L3/l3.2/internal/handler"
+	"github.com/AugustSerenity/go-contest-L3/l3.2/internal/service"
 	"github.com/AugustSerenity/go-contest-L3/l3.2/internal/storage"
 	"github.com/wb-go/wbf/zlog"
 )
 
 func main() {
-	var cfg config.Config
-
 	zlog.Init()
+	zlog.Logger.Info().Msg("Starting application...")
 
-	loader := config.New()
-	if err := loader.Load("config.yml"); err != nil {
+	var cfg config.Config
+	cfgLoader := config.New()
+	if err := cfgLoader.Load("config/config.yaml"); err != nil {
 		zlog.Logger.Fatal().
 			Err(err).
 			Msg("Failed to load config file")
 	}
 
-	if err := loader.Unmarshal(&cfg); err != nil {
+	if err := cfgLoader.Unmarshal(&cfg); err != nil {
 		zlog.Logger.Fatal().
 			Err(err).
 			Msg("Failed to unmarshal config")
@@ -26,5 +28,15 @@ func main() {
 
 	db := storage.InitDB(cfg.DB)
 	defer storage.CloseDB(db)
+
+	storage := storage.New(db)
+
+	srv := service.New(storage)
+
+	h := handler.New(srv)
+	zlog.Logger.Info().Str("addr", cfg.Server.Address).Msg("starting server")
+	if err := h.Router().Run(cfg.Server.Address); err != nil {
+		zlog.Logger.Fatal().Err(err).Msg("server failed to start")
+	}
 
 }
