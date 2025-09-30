@@ -22,7 +22,7 @@ func (h *Handler) Router() *ginext.Engine {
 
 	router.POST("/shorten", h.ShortenCreate)
 	router.GET("/s/:short_url", h.ClickShortLink)
-	router.GET("/analytics/:short_url", h.Getanalytics)
+	router.GET("/analytics/:short_url", h.GetAnalytics)
 
 	router.Static("/ui", "./web")
 	router.GET("/", func(c *ginext.Context) {
@@ -61,6 +61,23 @@ func (h *Handler) ClickShortLink(c *ginext.Context) {
 		return
 	}
 
+	userAgent := c.Request.UserAgent()
+	if err := h.service.TrackClick(c.Request.Context(), shortURL, userAgent); err != nil {
+		zlog.Logger.Error().Err(err).Str("short_url", shortURL).Msg("Failed to record click")
+	}
+
 	c.Redirect(302, originalUrl)
 }
-func (h *Handler) Getanalytics(c *ginext.Context) {}
+
+func (h *Handler) GetAnalytics(c *ginext.Context) {
+	shortURL := c.Param("short_url")
+
+	clicks, err := h.service.GetAnalytics(c.Request.Context(), shortURL)
+	if err != nil {
+		zlog.Logger.Error().Err(err).Str("short_url", shortURL).Msg("Failed to get analytics")
+		tools.SendError(c, 500, "Failed to get analytics")
+		return
+	}
+
+	tools.SendSuccess(c, 200, clicks)
+}

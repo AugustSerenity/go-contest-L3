@@ -7,3 +7,10 @@ type URL struct {
 	ShortURL    string    `json:"short_url"`
 	CreateAt    time.Time `json:"create_at"`
 }
+
+type Click struct {
+	ID        int       `json:"id"`
+	LinkID    int       `json:"link_id"`
+	UserAgent string    `json:"user_agent"`
+	CreateAt  time.Time `json:"create_at"`
+}

@@ -10,4 +10,6 @@ import (
 type Service interface {
 	Shorten(context.Context, dto.RequestURL) (*model.URL, error)
 	GetOriginalURL(context.Context, string) (string, error)
+	GetAnalytics(context.Context, string) ([]model.Click, error)
+	TrackClick(ctx context.Context, shortURL, userAgent string) error
 }

@@ -88,5 +88,55 @@ func generateShortURL() string {
 }
 
 func (s *Service) GetOriginalURL(ctx context.Context, shortCode string) (string, error) {
-	return s.storage.GetOriginalURL(ctx, shortCode)
+	url, err := s.storage.GetOriginalURL(ctx, shortCode)
+	if err != nil {
+		return "", err
+	}
+
+	return url, nil
+}
+
+func (s *Service) GetAnalytics(ctx context.Context, shortURL string) ([]model.Click, error) {
+	linkID, err := s.storage.GetLinkIDByShortURL(ctx, shortURL)
+	if err != nil {
+		zlog.Logger.Error().
+			Err(err).
+			Str("short_url", shortURL).
+			Msg("Failed to get link ID by short URL")
+		return nil, err
+	}
+
+	clicks, err := s.storage.GetClicksByLinkID(ctx, linkID)
+	if err != nil {
+		zlog.Logger.Error().
+			Err(err).
+			Int("link_id", linkID).
+			Msg("Failed to get clicks for link ID")
+		return nil, err
+	}
+
+	return clicks, nil
+}
+
+func (s *Service) TrackClick(ctx context.Context, shortURL, userAgent string) error {
+	linkID, err := s.storage.GetLinkIDByShortURL(ctx, shortURL)
+	if err != nil {
+		zlog.Logger.Error().
+			Err(err).
+			Str("short_url", shortURL).
+			Msg("Failed to get link ID to track click")
+		return err
+	}
+
+	err = s.storage.InsertClick(ctx, linkID, userAgent)
+	if err != nil {
+		zlog.Logger.Error().
+			Err(err).
+			Int("link_id", linkID).
+			Str("short_url", shortURL).
+			Msg("Failed to insert click")
+		return err
+	}
+
+	return nil
 }
