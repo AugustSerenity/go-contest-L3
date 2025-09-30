@@ -9,4 +9,5 @@ import (
 type Storage interface {
 	SaveLink(context.Context, *model.URL) error
 	ExistsByShortCode(context.Context, string) (bool, error)
+	GetOriginalURL(context.Context, string) (string, error)
 }

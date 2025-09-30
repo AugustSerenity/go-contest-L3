@@ -86,3 +86,7 @@ func generateShortURL() string {
 	zlog.Logger.Info().Str("short_url", code).Msg("Generated short URL")
 	return code
 }
+
+func (s *Service) GetOriginalURL(ctx context.Context, shortCode string) (string, error) {
+	return s.storage.GetOriginalURL(ctx, shortCode)
+}

@@ -51,5 +51,16 @@ func (h *Handler) ShortenCreate(c *ginext.Context) {
 
 }
 
-func (h *Handler) ClickShortLink(c *ginext.Context) {}
-func (h *Handler) Getanalytics(c *ginext.Context)   {}
+func (h *Handler) ClickShortLink(c *ginext.Context) {
+	shortURL := c.Param("short_url")
+
+	originalUrl, err := h.service.GetOriginalURL(c.Request.Context(), shortURL)
+	if err != nil {
+		zlog.Logger.Error().Err(err).Str("short_url", shortURL).Msg("Short URL not found")
+		tools.SendError(c, 404, "Short URL not found")
+		return
+	}
+
+	c.Redirect(302, originalUrl)
+}
+func (h *Handler) Getanalytics(c *ginext.Context) {}

@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	"github.com/AugustSerenity/go-contest-L3/l3.2/internal/model"
 	"github.com/wb-go/wbf/dbpg"
@@ -28,9 +29,7 @@ func (st *Storage) SaveLink(ctx context.Context, url *model.URL) error {
 }
 
 func (st *Storage) ExistsByShortCode(ctx context.Context, shortCode string) (bool, error) {
-	query := `
-		SELECT 1 FROM links WHERE short_url = $1 LIMIT 1
-	`
+	query := `SELECT 1 FROM links WHERE short_url = $1 LIMIT 1`
 
 	row := st.db.Master.QueryRowContext(ctx, query, shortCode)
 
@@ -44,4 +43,19 @@ func (st *Storage) ExistsByShortCode(ctx context.Context, shortCode string) (boo
 	}
 
 	return true, nil
+}
+
+func (st *Storage) GetOriginalURL(ctx context.Context, shortCode string) (string, error) {
+	query := `SELECT original_url FROM links WHERE short_url = $1`
+
+	var originalURL string
+	err := st.db.Master.QueryRowContext(ctx, query, shortCode).Scan(&originalURL)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return "", fmt.Errorf("not found")
+		}
+		return "", err
+	}
+
+	return originalURL, nil
 }
