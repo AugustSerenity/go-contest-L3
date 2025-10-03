@@ -41,7 +41,7 @@ make run
 ```
 ### Запуск тестов
 Проверка vet, lint, data race,
-```
+```sh
 make check
 ```
 
