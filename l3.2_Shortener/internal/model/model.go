@@ -14,3 +14,8 @@ type Click struct {
 	UserAgent string    `json:"user_agent"`
 	CreateAt  time.Time `json:"create_at"`
 }
+
+type AnalyticsResult struct {
+	Group string `json:"group"`
+	Count int    `json:"count"`
+}

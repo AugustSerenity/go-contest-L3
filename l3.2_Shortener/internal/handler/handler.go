@@ -71,13 +71,76 @@ func (h *Handler) ClickShortLink(c *ginext.Context) {
 
 func (h *Handler) GetAnalytics(c *ginext.Context) {
 	shortURL := c.Param("short_url")
+	group := c.Query("group")
 
-	clicks, err := h.service.GetAnalytics(c.Request.Context(), shortURL)
-	if err != nil {
-		zlog.Logger.Error().Err(err).Str("short_url", shortURL).Msg("Failed to get analytics")
-		tools.SendError(c, 500, "Failed to get analytics")
-		return
+	zlog.Logger.Info().
+		Str("short_url", shortURL).
+		Str("group", group).
+		Msg("Received analytics request")
+
+	switch group {
+	case "day":
+		data, err := h.service.GetAnalyticsGroupedByDay(c.Request.Context(), shortURL)
+		if err != nil {
+			zlog.Logger.Error().
+				Err(err).
+				Str("short_url", shortURL).
+				Msg("Failed to get daily analytics")
+			tools.SendError(c, 500, "Failed to get daily analytics")
+			return
+		}
+		zlog.Logger.Info().
+			Int("records", len(data)).
+			Str("short_url", shortURL).
+			Msg("Daily analytics retrieved")
+		tools.SendSuccess(c, 200, data)
+
+	case "month":
+		data, err := h.service.GetAnalyticsGroupedByMonth(c.Request.Context(), shortURL)
+		if err != nil {
+			zlog.Logger.Error().
+				Err(err).
+				Str("short_url", shortURL).
+				Msg("Failed to get monthly analytics")
+			tools.SendError(c, 500, "Failed to get monthly analytics")
+			return
+		}
+		zlog.Logger.Info().
+			Int("records", len(data)).
+			Str("short_url", shortURL).
+			Msg("Monthly analytics retrieved")
+		tools.SendSuccess(c, 200, data)
+
+	case "usag":
+		data, err := h.service.GetAnalyticsGroupedByUserAgent(c.Request.Context(), shortURL)
+		if err != nil {
+			zlog.Logger.Error().
+				Err(err).
+				Str("short_url", shortURL).
+				Msg("Failed to get user-agent analytics")
+			tools.SendError(c, 500, "Failed to get user-agent analytics")
+			return
+		}
+		zlog.Logger.Info().
+			Int("records", len(data)).
+			Str("short_url", shortURL).
+			Msg("User-agent analytics retrieved")
+		tools.SendSuccess(c, 200, data)
+
+	default:
+		clicks, err := h.service.GetAnalytics(c.Request.Context(), shortURL)
+		if err != nil {
+			zlog.Logger.Error().
+				Err(err).
+				Str("short_url", shortURL).
+				Msg("Failed to get raw click analytics")
+			tools.SendError(c, 500, "Failed to get analytics")
+			return
+		}
+		zlog.Logger.Info().
+			Int("records", len(clicks)).
+			Str("short_url", shortURL).
+			Msg("Raw click analytics retrieved")
+		tools.SendSuccess(c, 200, clicks)
 	}
-
-	tools.SendSuccess(c, 200, clicks)
 }

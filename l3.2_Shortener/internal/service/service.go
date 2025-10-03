@@ -140,3 +140,51 @@ func (s *Service) TrackClick(ctx context.Context, shortURL, userAgent string) er
 
 	return nil
 }
+
+func (s *Service) GetAnalyticsGroupedByDay(ctx context.Context, shortURL string) ([]model.AnalyticsResult, error) {
+	linkID, err := s.storage.GetLinkIDByShortURL(ctx, shortURL)
+	if err != nil {
+		zlog.Logger.Error().Err(err).Str("short_url", shortURL).Msg("GetLinkIDByShortURL failed (group=day)")
+		return nil, err
+	}
+
+	results, err := s.storage.GetClicksGroupedByDay(ctx, linkID)
+	if err != nil {
+		zlog.Logger.Error().Err(err).Int("link_id", linkID).Msg("GetClicksGroupedByDay failed")
+		return nil, err
+	}
+
+	return results, nil
+}
+
+func (s *Service) GetAnalyticsGroupedByMonth(ctx context.Context, shortURL string) ([]model.AnalyticsResult, error) {
+	linkID, err := s.storage.GetLinkIDByShortURL(ctx, shortURL)
+	if err != nil {
+		zlog.Logger.Error().Err(err).Str("short_url", shortURL).Msg("GetLinkIDByShortURL failed (group=month)")
+		return nil, err
+	}
+
+	results, err := s.storage.GetClicksGroupedByMonth(ctx, linkID)
+	if err != nil {
+		zlog.Logger.Error().Err(err).Int("link_id", linkID).Msg("GetClicksGroupedByMonth failed")
+		return nil, err
+	}
+
+	return results, nil
+}
+
+func (s *Service) GetAnalyticsGroupedByUserAgent(ctx context.Context, shortURL string) ([]model.AnalyticsResult, error) {
+	linkID, err := s.storage.GetLinkIDByShortURL(ctx, shortURL)
+	if err != nil {
+		zlog.Logger.Error().Err(err).Str("short_url", shortURL).Msg("GetLinkIDByShortURL failed (group=ua)")
+		return nil, err
+	}
+
+	results, err := s.storage.GetClicksGroupedByUserAgent(ctx, linkID)
+	if err != nil {
+		zlog.Logger.Error().Err(err).Int("link_id", linkID).Msg("GetClicksGroupedByUserAgent failed")
+		return nil, err
+	}
+
+	return results, nil
+}

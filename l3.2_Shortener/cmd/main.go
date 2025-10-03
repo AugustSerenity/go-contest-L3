@@ -29,9 +29,9 @@ func main() {
 	db := storage.InitDB(cfg.DB)
 	defer storage.CloseDB(db)
 
-	storage := storage.New(db)
+	store := storage.New(db)
 
-	srv := service.New(storage)
+	srv := service.New(store)
 
 	h := handler.New(srv)
 	zlog.Logger.Info().Str("addr", cfg.Server.Address).Msg("starting server")

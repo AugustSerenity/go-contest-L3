@@ -132,3 +132,62 @@ func (st *Storage) InsertClick(ctx context.Context, linkID int, userAgent string
 	}
 	return err
 }
+
+func (st *Storage) GetClicksGroupedByDay(ctx context.Context, linkID int) ([]model.AnalyticsResult, error) {
+	query := `
+		SELECT TO_CHAR(created_at, 'YYYY-MM-DD') AS group_by, COUNT(*) AS count
+		FROM clicks
+		WHERE link_id = $1
+		GROUP BY group_by
+		ORDER BY group_by
+	`
+	return st.queryAnalytics(ctx, query, linkID)
+}
+
+func (st *Storage) GetClicksGroupedByMonth(ctx context.Context, linkID int) ([]model.AnalyticsResult, error) {
+	query := `
+		SELECT TO_CHAR(created_at, 'YYYY-MM') AS group_by, COUNT(*) AS count
+		FROM clicks
+		WHERE link_id = $1
+		GROUP BY group_by
+		ORDER BY group_by
+	`
+	return st.queryAnalytics(ctx, query, linkID)
+}
+
+func (st *Storage) GetClicksGroupedByUserAgent(ctx context.Context, linkID int) ([]model.AnalyticsResult, error) {
+	query := `
+		SELECT user_agent AS group_by, COUNT(*) AS count
+		FROM clicks
+		WHERE link_id = $1
+		GROUP BY group_by
+		ORDER BY count DESC
+	`
+	return st.queryAnalytics(ctx, query, linkID)
+}
+
+func (st *Storage) queryAnalytics(ctx context.Context, query string, linkID int) ([]model.AnalyticsResult, error) {
+	rows, err := st.db.Master.QueryContext(ctx, query, linkID)
+	if err != nil {
+		zlog.Logger.Error().Err(err).Msg("Failed to execute analytics query")
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []model.AnalyticsResult
+	for rows.Next() {
+		var res model.AnalyticsResult
+		if err := rows.Scan(&res.Group, &res.Count); err != nil {
+			zlog.Logger.Error().Err(err).Msg("Failed to scan analytics result row")
+			return nil, err
+		}
+		results = append(results, res)
+	}
+
+	if err := rows.Err(); err != nil {
+		zlog.Logger.Error().Err(err).Msg("Row iteration error in analytics")
+		return nil, err
+	}
+
+	return results, nil
+}

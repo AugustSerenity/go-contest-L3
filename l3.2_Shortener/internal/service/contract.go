@@ -13,4 +13,7 @@ type Storage interface {
 	GetLinkIDByShortURL(ctx context.Context, shortURL string) (int, error)
 	GetClicksByLinkID(ctx context.Context, linkID int) ([]model.Click, error)
 	InsertClick(ctx context.Context, linkID int, userAgent string) error
+	GetClicksGroupedByDay(ctx context.Context, linkID int) ([]model.AnalyticsResult, error)
+	GetClicksGroupedByMonth(ctx context.Context, linkID int) ([]model.AnalyticsResult, error)
+	GetClicksGroupedByUserAgent(ctx context.Context, linkID int) ([]model.AnalyticsResult, error)
 }
