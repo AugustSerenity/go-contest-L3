@@ -4,8 +4,8 @@ server:
   idle_timeout: 60s
   shutdown_timeout: 10s
 db:
-  host: "localhost"
-  port: 5433
+  host: "postgres-service"
+  port: 5432
   username: "postgres"
   name: "url_shortener"
   password: "postgres"
