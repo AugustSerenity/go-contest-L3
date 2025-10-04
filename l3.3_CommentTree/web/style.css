@@ -1,0 +1,31 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 20px;
+  background: #f9f9f9;
+}
+
+#comment-form, #search-block {
+  margin-bottom: 20px;
+}
+
+textarea {
+  width: 100%;
+  height: 60px;
+}
+
+.comment {
+  margin: 10px 0;
+  padding: 10px;
+  background: #fff;
+  border-left: 3px solid #ccc;
+  position: relative;
+}
+
+.comment .actions {
+  margin-top: 5px;
+  font-size: 12px;
+}
+
+.comment .reply {
+  margin-left: 20px;
+}
