@@ -22,6 +22,8 @@ func (h *Handler) Router() *ginext.Engine {
 
 	router.POST("/comments", h.CreateComment)
 
+	router.Static("/", "./web")
+
 	return router
 }
 
