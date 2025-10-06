@@ -1,52 +1,82 @@
 const API_BASE = "/comments";
 
 async function loadComments() {
-  const res = await fetch(`${API_BASE}/tree`);
-  const data = await res.json();
-  const container = document.getElementById("comments");
-  container.innerHTML = "";
-  renderComments(data, container);
+  try {
+    const res = await fetch(API_BASE);
+    if (!res.ok) throw new Error('Ошибка загрузки комментариев');
+    const data = await res.json();
+
+    const comments = data.result?.comments || data.comments || [];
+    console.log('Получили комментарии:', comments);
+
+    const container = document.getElementById("comments");
+    container.innerHTML = "<h3>Все комментарии:</h3>";
+    renderComments(comments, container);
+  } catch (e) {
+    alert(e.message);
+  }
 }
 
-function renderComments(comments, container, level = 0) {
+
+function renderComments(comments, container) {
   comments.forEach(comment => {
-    const div = document.createElement("div");
-    div.className = "comment";
-    div.style.marginLeft = `${level * 20}px`;
-    div.innerHTML = `
-      <div><strong>ID ${comment.id}</strong>: ${comment.text}</div>
-      <div class="actions">
-        <button onclick="deleteComment(${comment.id})">Удалить</button>
-        <button onclick="replyTo(${comment.id})">Ответить</button>
-      </div>
-    `;
+    const div = document.createElement('div');
+    div.className = 'comment';
+    div.textContent = comment.text;
     container.appendChild(div);
+
     if (comment.children && comment.children.length > 0) {
-      renderComments(comment.children, container, level + 1);
+      const childContainer = document.createElement('div');
+      childContainer.className = 'children';
+      div.appendChild(childContainer);
+
+      renderComments(comment.children, childContainer);
     }
   });
 }
 
+
+
 async function addComment() {
-  const text = document.getElementById("new-comment-text").value;
-  const parentId = document.getElementById("parent-id").value || null;
+  const text = document.getElementById("new-comment-text").value.trim();
+  const parentIdRaw = document.getElementById("parent-id").value;
+  const parentId = parentIdRaw.trim() === "" ? null : Number(parentIdRaw);
 
-  const res = await fetch(API_BASE, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text, parent_id: parentId ? Number(parentId) : null }),
-  });
+  if (!text) {
+    alert("Введите текст комментария.");
+    return;
+  }
 
-  document.getElementById("new-comment-text").value = "";
-  document.getElementById("parent-id").value = "";
-  loadComments();
+  try {
+    const res = await fetch(API_BASE, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        text,
+        parent_id: parentId
+      }),
+    });
+    if (!res.ok) throw new Error('Ошибка при добавлении комментария');
+
+    document.getElementById("new-comment-text").value = "";
+    document.getElementById("parent-id").value = "";
+
+    loadComments();
+  } catch (e) {
+    alert(e.message);
+  }
 }
 
 async function deleteComment(id) {
-  if (!confirm("Удалить комментарий и все ответы?")) return;
+  if (!confirm("Удалить комментарий и все вложенные?")) return;
 
-  await fetch(`${API_BASE}/${id}`, { method: "DELETE" });
-  loadComments();
+  try {
+    const res = await fetch(`${API_BASE}/${id}`, { method: "DELETE" });
+    if (!res.ok) throw new Error('Ошибка при удалении комментария');
+    loadComments();
+  } catch (e) {
+    alert(e.message);
+  }
 }
 
 function replyTo(id) {
@@ -55,10 +85,20 @@ function replyTo(id) {
 }
 
 async function searchComments() {
-  const q = document.getElementById("search-input").value;
-  const res = await fetch(`/search?q=${encodeURIComponent(q)}`);
-  const data = await res.json();
-  const container = document.getElementById("comments");
-  container.innerHTML = "<h3>Результаты поиска:</h3>";
-  renderComments(data, container);
+  const q = document.getElementById("search-input").value.trim();
+  if (!q) return loadComments();
+
+  try {
+    const res = await fetch(`${API_BASE}?search=${encodeURIComponent(q)}`);
+    if (!res.ok) throw new Error('Ошибка при поиске комментариев');
+    const data = await res.json();
+
+    const comments = data.result?.comments || data.comments || [];
+
+    const container = document.getElementById("comments");
+    container.innerHTML = "<h3>Результаты поиска:</h3>";
+    renderComments(comments, container);
+  } catch (e) {
+    alert(e.message);
+  }
 }

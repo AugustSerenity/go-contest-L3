@@ -7,5 +7,6 @@ func CastModel(c Comment) dto.CommentResponse {
 		ID:       c.ID,
 		Text:     c.Text,
 		ParentID: c.ParentID,
+		Children: []dto.CommentResponse{},
 	}
 }

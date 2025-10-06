@@ -1,10 +1,14 @@
 body {
   font-family: Arial, sans-serif;
   margin: 20px;
-  background: #f9f9f9;
+  background: #f4f4f4;
 }
 
-#comment-form, #search-block {
+h1 {
+  margin-bottom: 10px;
+}
+
+#search-block {
   margin-bottom: 20px;
 }
 
@@ -18,7 +22,7 @@ textarea {
   padding: 10px;
   background: #fff;
   border-left: 3px solid #ccc;
-  position: relative;
+  border-radius: 4px;
 }
 
 .comment .actions {
@@ -26,6 +30,6 @@ textarea {
   font-size: 12px;
 }
 
-.comment .reply {
-  margin-left: 20px;
+#comment-form {
+  margin-top: 20px;
 }

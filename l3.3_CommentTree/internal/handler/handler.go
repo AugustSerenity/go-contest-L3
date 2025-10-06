@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"strconv"
+
 	"github.com/AugustSerenity/go-contest-L3/tree/main/l3.3_CommentTree/internal/handler/dto"
 	"github.com/AugustSerenity/go-contest-L3/tree/main/l3.3_CommentTree/internal/handler/tools"
 	"github.com/wb-go/wbf/ginext"
@@ -24,7 +26,10 @@ func (h *Handler) Router() *ginext.Engine {
 	router.GET("/comments", h.GetAllComments)
 	router.DELETE("/comments/:id", h.Delete)
 
-	router.Static("/", "./web")
+	router.Static("/static", "./web")
+	router.GET("/", func(c *ginext.Context) {
+		c.File("./web/index.html")
+	})
 
 	return router
 }
@@ -51,18 +56,37 @@ func (h *Handler) CreateComment(c *ginext.Context) {
 }
 
 func (h *Handler) GetAllComments(c *ginext.Context) {
-	id := c.Query("parent")
+	parent := c.Query("parent")
+	search := c.Query("search")
+	pageStr := c.Query("page")
+	limitStr := c.Query("limit")
 
-	comments, err := h.service.GetAllComments(id)
+	page := 1
+	limit := 20
+	if p, err := strconv.Atoi(pageStr); err == nil && p > 0 {
+		page = p
+	}
+	if l, err := strconv.Atoi(limitStr); err == nil && l > 0 {
+		limit = l
+	}
+
+	if search != "" {
+		comments, err := h.service.SearchComments(search, page, limit)
+		if err != nil {
+			tools.SendError(c, 404, "Comments not found")
+			return
+		}
+		tools.SendSuccess(c, 200, ginext.H{"comments": comments})
+		return
+	}
+
+	comments, err := h.service.GetAllComments(parent)
 	if err != nil {
-		zlog.Logger.Error().Err(err).Str("parent", id).Msg("Comments not found")
 		tools.SendError(c, 404, "Comments not found")
 		return
 	}
 
-	tools.SendSuccess(c, 200, ginext.H{
-		"comments": comments,
-	})
+	tools.SendSuccess(c, 200, ginext.H{"comments": comments})
 }
 
 func (h *Handler) Delete(c *ginext.Context) {
