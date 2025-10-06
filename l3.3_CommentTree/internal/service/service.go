@@ -2,6 +2,7 @@ package service
 
 import (
 	"encoding/json"
+	"strings"
 	"time"
 
 	"github.com/AugustSerenity/go-contest-L3/tree/main/l3.3_CommentTree/internal/handler/dto"
@@ -52,13 +53,59 @@ func (s *Service) GetAllComments(idComment string) ([]*dto.CommentResponse, erro
 }
 
 func (s *Service) SearchComments(q string, page, limit int) ([]*dto.CommentResponse, error) {
-	comments, err := s.storage.SearchComments(q, page, limit)
+	allComments, err := s.storage.GetTree("")
 	if err != nil {
 		return nil, err
 	}
 
-	tree := buildTree(comments)
-	return tree, nil
+	tree := buildTree(allComments)
+	var result []*dto.CommentResponse
+	for _, root := range tree {
+		if found := findCommentsByKeyword(root, q); found != nil {
+			result = append(result, found)
+		}
+	}
+	return result, nil
+}
+
+func findCommentsByKeyword(c *dto.CommentResponse, keyword string) *dto.CommentResponse {
+	var matchingChildren []*dto.CommentResponse
+
+	for _, child := range c.Children {
+		if match := findCommentsByKeyword(child, keyword); match != nil {
+			matchingChildren = append(matchingChildren, match)
+		}
+	}
+
+	if strings.Contains(strings.ToLower(c.Text), strings.ToLower(keyword)) || len(matchingChildren) > 0 {
+		return &dto.CommentResponse{
+			ID:       c.ID,
+			Text:     c.Text,
+			Children: matchingChildren,
+		}
+	}
+
+	return nil
+}
+
+func searchRecursive(comments []*dto.CommentResponse, keyword string) []*dto.CommentResponse {
+	var results []*dto.CommentResponse
+	for _, comment := range comments {
+		if strings.Contains(comment.Text, keyword) {
+			results = append(results, comment)
+		}
+		if len(comment.Children) > 0 {
+			childResults := searchRecursive(comment.Children, keyword)
+			if len(childResults) > 0 {
+				results = append(results, &dto.CommentResponse{
+					ID:       comment.ID,
+					Text:     comment.Text,
+					Children: childResults,
+				})
+			}
+		}
+	}
+	return results
 }
 
 func buildTree(comments []model.Comment) []*dto.CommentResponse {

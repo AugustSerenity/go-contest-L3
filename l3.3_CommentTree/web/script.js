@@ -105,3 +105,5 @@ async function searchComments() {
     alert(e.message);
   }
 }
+
+window.addEventListener("DOMContentLoaded", loadComments);
