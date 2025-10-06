@@ -67,3 +67,12 @@ func buildTree(comments []model.Comment) []dto.CommentResponse {
 
 	return roots
 }
+
+func (s *Service) DeleteComment(id string) error {
+	err := s.storage.DeleteCommentByID(id)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

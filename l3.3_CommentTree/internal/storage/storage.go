@@ -74,3 +74,22 @@ func (st *Storage) GetTree(idComment string) ([]model.Comment, error) {
 
 	return comments, nil
 }
+
+func (st *Storage) DeleteCommentByID(id string) error {
+	query := `
+		WITH RECURSIVE comment_tree AS (
+			SELECT id FROM comments WHERE id = $1
+			UNION ALL
+			SELECT c.id FROM comments c
+			INNER JOIN comment_tree ct ON c.parent_id = ct.id
+		)
+		DELETE FROM comments WHERE id IN (SELECT id FROM comment_tree);
+	`
+
+	_, err := st.db.Master.Exec(query, id)
+	if err != nil {
+		return fmt.Errorf("delete comment failed: %w", err)
+	}
+
+	return nil
+}

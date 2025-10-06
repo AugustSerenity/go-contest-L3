@@ -22,6 +22,7 @@ func (h *Handler) Router() *ginext.Engine {
 
 	router.POST("/comments", h.CreateComment)
 	router.GET("/comments", h.GetAllComments)
+	router.DELETE("/comments/:id", h.Delete)
 
 	router.Static("/", "./web")
 
@@ -61,5 +62,19 @@ func (h *Handler) GetAllComments(c *ginext.Context) {
 
 	tools.SendSuccess(c, 200, ginext.H{
 		"comments": comments,
+	})
+}
+
+func (h *Handler) Delete(c *ginext.Context) {
+	id := c.Param("id")
+	err := h.service.DeleteComment(id)
+	if err != nil {
+		zlog.Logger.Error().Err(err).Msg("failed to delete comment")
+		tools.SendError(c, 404, "failed to delete comment")
+		return
+	}
+
+	tools.SendSuccess(c, 200, ginext.H{
+		"status": "cancel",
 	})
 }
