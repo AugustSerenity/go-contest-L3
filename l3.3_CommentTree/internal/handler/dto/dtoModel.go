@@ -6,8 +6,8 @@ type CommentRequest struct {
 }
 
 type CommentResponse struct {
-	ID       int64             `json:"id"`
-	Text     string            `json:"text"`
-	ParentID *int64            `json:"parent_id,omitempty"`
-	Children []CommentResponse `json:"children,omitempty"`
+	ID       int64              `json:"id"`
+	Text     string             `json:"text"`
+	ParentID *int64             `json:"parent_id,omitempty"`
+	Children []*CommentResponse `json:"children,omitempty"`
 }

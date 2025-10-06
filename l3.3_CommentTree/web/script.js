@@ -17,25 +17,28 @@ async function loadComments() {
   }
 }
 
-
-function renderComments(comments, container) {
+function renderComments(comments, container, level = 0) {
   comments.forEach(comment => {
     const div = document.createElement('div');
     div.className = 'comment';
-    div.textContent = comment.text;
+
+    div.style.marginLeft = `${level * 20}px`;
+
+    div.innerHTML = `
+      <div><strong>ID ${comment.id}</strong>: ${comment.text}</div>
+      <div class="actions">
+        <button onclick="replyTo(${comment.id})">Ответить</button>
+        <button onclick="deleteComment(${comment.id})">Удалить</button>
+      </div>
+    `;
+
     container.appendChild(div);
 
     if (comment.children && comment.children.length > 0) {
-      const childContainer = document.createElement('div');
-      childContainer.className = 'children';
-      div.appendChild(childContainer);
-
-      renderComments(comment.children, childContainer);
+      renderComments(comment.children, container, level + 1);
     }
   });
 }
-
-
 
 async function addComment() {
   const text = document.getElementById("new-comment-text").value.trim();

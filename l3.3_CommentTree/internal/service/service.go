@@ -33,20 +33,10 @@ func (s *Service) CreateComment(commentIncome dto.CommentRequest) (dto.CommentRe
 	}
 
 	comment.ID = id
-	return model.CastModel(comment), nil
+	return *model.CastModel(comment), nil
 }
 
-func (s *Service) SearchComments(q string, page, limit int) ([]dto.CommentResponse, error) {
-	comments, err := s.storage.SearchComments(q, page, limit)
-	if err != nil {
-		return nil, err
-	}
-
-	tree := buildTree(comments)
-	return tree, nil
-}
-
-func (s *Service) GetAllComments(idComment string) ([]dto.CommentResponse, error) {
+func (s *Service) GetAllComments(idComment string) ([]*dto.CommentResponse, error) {
 	comments, err := s.storage.GetTree(idComment)
 	if err != nil {
 		return nil, err
@@ -61,15 +51,26 @@ func (s *Service) GetAllComments(idComment string) ([]dto.CommentResponse, error
 	return tree, nil
 }
 
-func buildTree(comments []model.Comment) []dto.CommentResponse {
-	idToComment := make(map[int64]*dto.CommentResponse)
-
-	for _, c := range comments {
-		copied := model.CastModel(c)
-		idToComment[c.ID] = &copied
+func (s *Service) SearchComments(q string, page, limit int) ([]*dto.CommentResponse, error) {
+	comments, err := s.storage.SearchComments(q, page, limit)
+	if err != nil {
+		return nil, err
 	}
 
-	zlog.Logger.Info().Int("total_nodes", len(idToComment)).Msg("Starting buildTree")
+	tree := buildTree(comments)
+	return tree, nil
+}
+
+func buildTree(comments []model.Comment) []*dto.CommentResponse {
+	idToComment := make(map[int64]*dto.CommentResponse)
+
+	var commentResponses []*dto.CommentResponse
+	for _, c := range comments {
+		copied := model.CastModel(c)               // возвращает *dto.CommentResponse
+		copied.Children = []*dto.CommentResponse{} // на всякий случай инициализируем
+		idToComment[c.ID] = copied
+		commentResponses = append(commentResponses, copied)
+	}
 
 	var roots []*dto.CommentResponse
 	for _, c := range comments {
@@ -78,30 +79,14 @@ func buildTree(comments []model.Comment) []dto.CommentResponse {
 		if c.ParentID != nil {
 			parent, ok := idToComment[*c.ParentID]
 			if ok {
-				zlog.Logger.Debug().
-					Int64("child_id", c.ID).
-					Int64("parent_id", *c.ParentID).
-					Msg("Attaching child to parent")
-
-				parent.Children = append(parent.Children, *current)
-			} else {
-				zlog.Logger.Warn().
-					Int64("child_id", c.ID).
-					Int64("parent_id", *c.ParentID).
-					Msg("Parent not found — skipping child")
+				parent.Children = append(parent.Children, current)
 			}
 		} else {
 			roots = append(roots, current)
 		}
 	}
 
-	result := make([]dto.CommentResponse, len(roots))
-	for i, r := range roots {
-		result[i] = *r
-	}
-
-	zlog.Logger.Info().Int("root_nodes", len(result)).Msg("Finished buildTree")
-	return result
+	return roots
 }
 
 func (s *Service) DeleteComment(id string) error {

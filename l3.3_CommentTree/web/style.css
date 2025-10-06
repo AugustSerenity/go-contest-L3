@@ -23,6 +23,11 @@ textarea {
   background: #fff;
   border-left: 3px solid #ccc;
   border-radius: 4px;
+  transition: background 0.3s ease;
+}
+
+.comment:hover {
+  background: #e9f0fb;
 }
 
 .comment .actions {
@@ -32,4 +37,8 @@ textarea {
 
 #comment-form {
   margin-top: 20px;
+}
+
+.comment {
+  transition: margin-left 0.2s ease;
 }
