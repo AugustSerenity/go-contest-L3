@@ -88,35 +88,13 @@ func findCommentsByKeyword(c *dto.CommentResponse, keyword string) *dto.CommentR
 	return nil
 }
 
-func searchRecursive(comments []*dto.CommentResponse, keyword string) []*dto.CommentResponse {
-	var results []*dto.CommentResponse
-	for _, comment := range comments {
-		if strings.Contains(comment.Text, keyword) {
-			results = append(results, comment)
-		}
-		if len(comment.Children) > 0 {
-			childResults := searchRecursive(comment.Children, keyword)
-			if len(childResults) > 0 {
-				results = append(results, &dto.CommentResponse{
-					ID:       comment.ID,
-					Text:     comment.Text,
-					Children: childResults,
-				})
-			}
-		}
-	}
-	return results
-}
-
 func buildTree(comments []model.Comment) []*dto.CommentResponse {
 	idToComment := make(map[int64]*dto.CommentResponse)
 
-	var commentResponses []*dto.CommentResponse
 	for _, c := range comments {
-		copied := model.CastModel(c)               // возвращает *dto.CommentResponse
-		copied.Children = []*dto.CommentResponse{} // на всякий случай инициализируем
+		copied := model.CastModel(c)
+		copied.Children = []*dto.CommentResponse{}
 		idToComment[c.ID] = copied
-		commentResponses = append(commentResponses, copied)
 	}
 
 	var roots []*dto.CommentResponse
