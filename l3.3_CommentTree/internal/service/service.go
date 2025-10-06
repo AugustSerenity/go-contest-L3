@@ -33,3 +33,37 @@ func (s *Service) CreateComment(commentIncome dto.CommentRequest) (dto.CommentRe
 	comment.ID = id
 	return model.CastModel(comment), nil
 }
+
+func (s *Service) GetAllComments(idComment string) ([]dto.CommentResponse, error) {
+	comments, err := s.storage.GetTree(idComment)
+	if err != nil {
+		return nil, err
+	}
+
+	tree := buildTree(comments)
+	return tree, nil
+}
+
+func buildTree(comments []model.Comment) []dto.CommentResponse {
+	idToComment := make(map[int64]*dto.CommentResponse)
+	var roots []dto.CommentResponse
+
+	for _, c := range comments {
+		dtoComment := model.CastModel(c)
+		dtoComment.Children = []dto.CommentResponse{}
+
+		idToComment[c.ID] = &dtoComment
+	}
+
+	for _, c := range comments {
+		current := idToComment[c.ID]
+		if c.ParentID != nil {
+			parent := idToComment[*c.ParentID]
+			parent.Children = append(parent.Children, *current)
+		} else {
+			roots = append(roots, *current)
+		}
+	}
+
+	return roots
+}

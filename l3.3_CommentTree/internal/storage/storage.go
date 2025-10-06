@@ -39,3 +39,38 @@ func (st *Storage) InsertComment(comment model.Comment) (int64, error) {
 
 	return id, nil
 }
+
+func (st *Storage) GetTree(idComment string) ([]model.Comment, error) {
+	query := `
+		WITH RECURSIVE comment_tree AS (
+			SELECT * FROM comments WHERE id = $1
+			UNION ALL
+			SELECT c.* FROM comments c
+			INNER JOIN comment_tree ct ON c.parent_id = ct.id
+		)
+		SELECT * FROM comment_tree ORDER BY created_at;
+	`
+
+	rows, err := st.db.Master.Query(query, idComment)
+	if err != nil {
+		return nil, fmt.Errorf("get tree failed: %w", err)
+	}
+	defer rows.Close()
+
+	var comments []model.Comment
+
+	for rows.Next() {
+		var c model.Comment
+		err := rows.Scan(&c.ID, &c.ParentID, &c.Text, &c.CreatedAt, &c.UpdatedAt)
+		if err != nil {
+			return nil, fmt.Errorf("scan comment failed: %w", err)
+		}
+		comments = append(comments, c)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows iteration failed: %w", err)
+	}
+
+	return comments, nil
+}

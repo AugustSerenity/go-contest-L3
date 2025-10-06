@@ -21,6 +21,7 @@ func (h *Handler) Router() *ginext.Engine {
 	router := ginext.New()
 
 	router.POST("/comments", h.CreateComment)
+	router.GET("/comments", h.GetAllComments)
 
 	router.Static("/", "./web")
 
@@ -46,4 +47,19 @@ func (h *Handler) CreateComment(c *ginext.Context) {
 		"comment": comment,
 	})
 
+}
+
+func (h *Handler) GetAllComments(c *ginext.Context) {
+	id := c.Query("parent")
+
+	comments, err := h.service.GetAllComments(id)
+	if err != nil {
+		zlog.Logger.Error().Err(err).Str("parent", id).Msg("Comments not found")
+		tools.SendError(c, 404, "Comments not found")
+		return
+	}
+
+	tools.SendSuccess(c, 200, ginext.H{
+		"comments": comments,
+	})
 }
