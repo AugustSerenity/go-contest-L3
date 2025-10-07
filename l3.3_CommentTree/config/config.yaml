@@ -4,8 +4,8 @@ server:
   idle_timeout: 60s
   shutdown_timeout: 10s
 db:
-  host: "localhost" #"postgres-service"
-  port: 5433
+  host: "postgres-service" #"localhost" 
+  port: 5432
   username: "postgres"
   name: "comments_tree"
   password: "postgres"
