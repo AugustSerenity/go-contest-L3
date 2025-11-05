@@ -1,1 +1,13 @@
 package service
+
+import (
+	"context"
+	"io"
+
+	"github.com/AugustSerenity/go-contest-L3/l3.4_ImageProcessor/internal/model"
+)
+
+type Storage interface {
+	SaveFile(io.Reader, string) error
+	Create(context.Context, *model.Image) error
+}
