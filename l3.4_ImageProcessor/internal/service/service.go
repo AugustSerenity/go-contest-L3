@@ -10,19 +10,21 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/AugustSerenity/go-contest-L3/l3.4_ImageProcessor/internal/kafka/producer"
 	"github.com/AugustSerenity/go-contest-L3/l3.4_ImageProcessor/internal/model"
 )
 
 type Service struct {
 	storage     Storage
-	producer    ServiceProducer
+	producer    producer.ServiceProducer
 	storagePath string
 }
 
-func New(st Storage, sp ServiceProducer) *Service {
+func New(st Storage, sp producer.ServiceProducer, storagePath string) *Service {
 	return &Service{
-		storage:  st,
-		producer: sp,
+		storage:     st,
+		producer:    sp,
+		storagePath: storagePath,
 	}
 }
 
@@ -45,7 +47,7 @@ func (s *Service) UploadImage(ctx context.Context, file io.Reader, filename stri
 	}
 
 	if err := s.storage.Create(ctx, image); err != nil {
-		os.Remove(originalPath) // Cleanup
+		os.Remove(originalPath)
 		return "", err
 	}
 
