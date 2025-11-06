@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -63,4 +64,24 @@ func (s *Service) UploadImage(ctx context.Context, file io.Reader, filename stri
 
 	return imageID, nil
 
+}
+
+func (s *Service) ProcessImage(ctx context.Context, imageID, imagePath string) error {
+	image, err := s.storage.GetByID(ctx, imageID)
+	if err != nil {
+		return fmt.Errorf("failed to get image: %w", err)
+	}
+
+	image.Status = model.StatusProcessing
+	image.ProcessedAt = &time.Time{}
+	if err := s.storage.UpdateStatus(ctx, image); err != nil {
+		return fmt.Errorf("failed to update image status: %w", err)
+	}
+
+	image.Status = model.StatusCompleted
+	if err := s.storage.UpdateStatus(ctx, image); err != nil {
+		return fmt.Errorf("failed to update image status: %w", err)
+	}
+
+	return nil
 }
