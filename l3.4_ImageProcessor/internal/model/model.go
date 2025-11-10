@@ -12,9 +12,12 @@ const (
 )
 
 type Image struct {
-	ID           string      `json:"id"`
-	OriginalPath string      `json:"original_path"`
-	Status       ImageStatus `json:"status"`
-	CreatedAt    time.Time   `json:"created_at"`
-	ProcessedAt  *time.Time  `json:"processed_at"`
+	ID            string      `json:"id"`
+	OriginalPath  string      `json:"original_path"`
+	ResizedPath   string      `json:"resized_path,omitempty"`
+	ThumbPath     string      `json:"thumb_path,omitempty"`
+	WatermarkPath string      `json:"watermark_path,omitempty"`
+	Status        ImageStatus `json:"status"`
+	CreatedAt     time.Time   `json:"created_at"`
+	ProcessedAt   *time.Time  `json:"processed_at"`
 }

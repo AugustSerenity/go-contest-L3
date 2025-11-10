@@ -7,5 +7,18 @@ db:
   host: "postgres-service" #"localhost" 
   port: 5432
   username: "postgres"
-  name: "comments_tree"
+  name: "image_processor"
   password: "postgres"
+
+storage_path: "./storage"
+
+kafka:
+  brokers:
+    - "kafka:9092"            
+  topic: "images"
+  group_id: "image_processor_group"
+kafka_ui:
+  enabled: true
+  url: "http://localhost:8081" 
+  cluster_name: "local"
+  polling_timeout_ms: 30000

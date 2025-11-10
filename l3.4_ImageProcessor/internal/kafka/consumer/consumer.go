@@ -3,75 +3,61 @@ package consumer
 import (
 	"context"
 	"encoding/json"
-	"log"
 
 	"github.com/AugustSerenity/go-contest-L3/l3.4_ImageProcessor/internal/service"
-	"github.com/segmentio/kafka-go"
+	wbfkafka "github.com/wb-go/wbf/kafka"
 	"github.com/wb-go/wbf/retry"
+	"github.com/wb-go/wbf/zlog"
 )
 
 type ImageProcessorConsumer struct {
-	consumer *kafka.Reader
+	consumer *wbfkafka.Consumer
 	service  *service.Service
+	strategy retry.Strategy
 }
 
-func NewImageProcessorConsumer(brokers []string, topic, groupID string, service *service.Service) *ImageProcessorConsumer {
+func NewImageProcessorConsumer(brokers []string, topic, groupID string, service *service.Service, strategy retry.Strategy) *ImageProcessorConsumer {
 	return &ImageProcessorConsumer{
-		consumer: kafka.NewReader(kafka.ReaderConfig{
-			Brokers: brokers,
-			Topic:   topic,
-			GroupID: groupID,
-		}),
-		service: service,
+		consumer: wbfkafka.NewConsumer(brokers, topic, groupID),
+		service:  service,
+		strategy: strategy,
 	}
 }
 
-func (c *ImageProcessorConsumer) StartConsuming(ctx context.Context, out chan<- kafka.Message, strategy retry.Strategy) error {
+// StartConsuming запускает цикл обработки сообщений
+func (c *ImageProcessorConsumer) StartConsuming(ctx context.Context) {
 	for {
-		msg, err := c.FetchWithRetry(ctx, strategy)
-		if err != nil {
-			log.Printf("Error fetching message: %v", err)
-			continue
-		}
-
-		var task struct {
-			ImageID string `json:"image_id"`
-			Path    string `json:"path"`
-		}
-
-		if err := json.Unmarshal(msg.Value, &task); err != nil {
-			log.Printf("Error unmarshalling message: %v", err)
-			continue
-		}
-
-		if err := c.service.ProcessImage(ctx, task.ImageID, task.Path); err != nil {
-			log.Printf("Error processing image: %v", err)
-			continue
-		}
-
-		if err := c.consumer.CommitMessages(ctx, msg); err != nil {
-			log.Printf("Error committing message: %v", err)
-			continue
-		}
-
 		select {
-		case out <- msg:
 		case <-ctx.Done():
-			return nil
+			zlog.Logger.Info().Msg("Kafka consumer shutting down...")
+			return
+		default:
+			msg, err := c.consumer.FetchWithRetry(ctx, c.strategy)
+			if err != nil {
+				zlog.Logger.Error().Err(err).Msg("Error fetching Kafka message")
+				continue
+			}
+
+			var task struct {
+				ImageID string `json:"image_id"`
+				Path    string `json:"path"`
+			}
+
+			if err := json.Unmarshal(msg.Value, &task); err != nil {
+				zlog.Logger.Error().Err(err).Msg("Error unmarshalling Kafka message")
+				continue
+			}
+
+			if err := c.service.ProcessImage(ctx, task.ImageID, task.Path); err != nil {
+				zlog.Logger.Error().Err(err).Msg("Error processing image")
+				continue
+			}
+
+			if err := c.consumer.Commit(ctx, msg); err != nil {
+				zlog.Logger.Error().Err(err).Msg("Error committing Kafka message")
+			}
 		}
 	}
-}
-
-func (c *ImageProcessorConsumer) FetchWithRetry(ctx context.Context, strategy retry.Strategy) (kafka.Message, error) {
-	var msg kafka.Message
-	err := retry.Do(func() error {
-		m, e := c.consumer.FetchMessage(ctx)
-		if e == nil {
-			msg = m
-		}
-		return e
-	}, strategy)
-	return msg, err
 }
 
 func (c *ImageProcessorConsumer) Close() error {

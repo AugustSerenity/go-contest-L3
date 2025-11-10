@@ -1,25 +1,41 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>ImageProcessor</title>
-    <style>
-        body{font-family:system-ui, -apple-system, Segoe UI, Roboto, Arial; margin:24px;}
-        .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
-        .card{border:1px solid #ddd;border-radius:12px;padding:12px}
-        .muted{color:#666;font-size:12px}
-        img{max-width:100%;border-radius:8px}
-        button{margin-top:8px}
-    </style>
+  <meta charset="UTF-8">
+  <title>Image Processor</title>
 </head>
 <body>
-    <h1>ImageProcessor</h1>
-    <form id="form">
-        <input type="file" name="image" accept="image/*" required />
-        <button type="submit">Загрузить</button>
-    </form>
-    <div class="grid" id="list"></div>
-    <script src="/static/app.js"></script>
+  <h1>Image Processor</h1>
+  <form id="uploadForm">
+    <input type="file" name="image" accept="image/*" required>
+    <button type="submit">Загрузить</button>
+  </form>
+
+  <div id="gallery"></div>
+
+  <script>
+    const form = document.getElementById('uploadForm');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(form);
+      const resp = await fetch('/upload', { method: 'POST', body: formData });
+      const data = await resp.json();
+      alert('Изображение загружено, ID: ' + data.id);
+    });
+
+    async function loadImage(id) {
+      const resp = await fetch(`/image/${id}`);
+      if (resp.status === 202) {
+        const data = await resp.json();
+        alert(`Статус: ${data.status}`);
+      } else if (resp.ok) {
+        const blob = await resp.blob();
+        const url = URL.createObjectURL(blob);
+        const img = document.createElement('img');
+        img.src = url;
+        document.body.appendChild(img);
+      }
+    }
+  </script>
 </body>
 </html>

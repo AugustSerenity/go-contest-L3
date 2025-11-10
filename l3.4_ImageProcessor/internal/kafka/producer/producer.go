@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/wb-go/wbf/kafka"
+	"github.com/wb-go/wbf/zlog"
 )
 
 type KafkaServiceProducer struct {
@@ -15,5 +16,9 @@ func NewKafkaServiceProducer(producer *kafka.Producer) *KafkaServiceProducer {
 }
 
 func (k *KafkaServiceProducer) Send(ctx context.Context, key, value []byte) error {
-	return k.producer.Send(ctx, key, value)
+	if err := k.producer.Send(ctx, key, value); err != nil {
+		zlog.Logger.Error().Err(err).Msg("Failed to send Kafka message")
+		return err
+	}
+	return nil
 }

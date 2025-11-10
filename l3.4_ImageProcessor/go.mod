@@ -3,6 +3,8 @@ module github.com/AugustSerenity/go-contest-L3/l3.4_ImageProcessor
 go 1.22.6
 
 require (
+	github.com/disintegration/imaging v1.6.2
+	github.com/segmentio/kafka-go v0.4.37
 	github.com/spf13/viper v1.18.2
 	github.com/wb-go/wbf v0.0.8
 )
@@ -35,7 +37,6 @@ require (
 	github.com/rs/zerolog v1.30.0 // indirect
 	github.com/sagikazarmark/locafero v0.4.0 // indirect
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect
-	github.com/segmentio/kafka-go v0.4.37 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect
 	github.com/spf13/afero v1.11.0 // indirect
 	github.com/spf13/cast v1.6.0 // indirect
@@ -48,6 +49,7 @@ require (
 	golang.org/x/arch v0.3.0 // indirect
 	golang.org/x/crypto v0.16.0 // indirect
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9 // indirect
+	golang.org/x/image v0.0.0-20191009234506-e7c1f5e7dbb8 // indirect
 	golang.org/x/net v0.19.0 // indirect
 	golang.org/x/sys v0.15.0 // indirect
 	golang.org/x/text v0.14.0 // indirect

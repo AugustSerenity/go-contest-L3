@@ -7,8 +7,11 @@ import (
 )
 
 type Config struct {
-	Server Server `mapstructure:"server"`
-	DB     DB     `mapstructure:"db"`
+	Server      Server  `mapstructure:"server"`
+	DB          DB      `mapstructure:"db"`
+	Kafka       Kafka   `mapstructure:"kafka"`
+	KafkaUI     KafkaUI `mapstructure:"kafka_ui"`
+	StoragePath string  `mapstructure:"storage_path"`
 }
 
 type Server struct {
@@ -20,10 +23,23 @@ type Server struct {
 
 type DB struct {
 	Host     string `mapstructure:"host"`
-	Port     string `mapstructure:"port"`
+	Port     int    `mapstructure:"port"`
 	Username string `mapstructure:"username"`
 	Name     string `mapstructure:"name"`
 	Password string `mapstructure:"password"`
+}
+
+type Kafka struct {
+	Brokers []string `mapstructure:"brokers"`
+	Topic   string   `mapstructure:"topic"`
+	GroupID string   `mapstructure:"group_id"`
+}
+
+type KafkaUI struct {
+	Enabled          bool   `mapstructure:"enabled"`
+	URL              string `mapstructure:"url"`
+	ClusterName      string `mapstructure:"cluster_name"`
+	PollingTimeoutMs int    `mapstructure:"polling_timeout_ms"`
 }
 
 type ConfigLoader struct {

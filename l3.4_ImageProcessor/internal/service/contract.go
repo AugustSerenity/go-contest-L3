@@ -12,4 +12,5 @@ type Storage interface {
 	Create(context.Context, *model.Image) error
 	GetByID(context.Context, string) (*model.Image, error)
 	UpdateStatus(context.Context, *model.Image) error
+	Delete(context.Context, string) error
 }
