@@ -39,8 +39,9 @@ func main() {
 	kafkaProd := wbfkafka.NewProducer(cfg.Kafka.Brokers, cfg.Kafka.Topic)
 	serviceProducer := producer.NewKafkaServiceProducer(kafkaProd)
 
-	imageDir := "./uploads"
-	srv := service.New(store, serviceProducer, imageDir)
+	storagePath := cfg.StoragePath
+
+	srv := service.New(store, serviceProducer, storagePath)
 
 	h := handler.New(srv)
 	server := &http.Server{
@@ -53,15 +54,16 @@ func main() {
 		Delay:    time.Second,
 		Backoff:  1,
 	}
-
 	kafkaConsumer := consumer.NewImageProcessorConsumer(cfg.Kafka.Brokers, cfg.Kafka.Topic, cfg.Kafka.GroupID, srv, strategy)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	// Запуск Kafka consumer
 	go kafkaConsumer.StartConsuming(ctx)
 	defer kafkaConsumer.Close()
 
+	// Запуск HTTP сервера
 	go func() {
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			zlog.Logger.Fatal().Err(err).Msg("HTTP server failed")

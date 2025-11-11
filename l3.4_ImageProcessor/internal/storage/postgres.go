@@ -11,7 +11,7 @@ import (
 
 func InitDB(cfg config.DB) *dbpg.DB {
 	masterDSN := fmt.Sprintf(
-		"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+		"host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
 		cfg.Host, cfg.Port, cfg.Username, cfg.Password, cfg.Name,
 	)
 

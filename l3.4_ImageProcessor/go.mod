@@ -4,7 +4,6 @@ go 1.22.6
 
 require (
 	github.com/disintegration/imaging v1.6.2
-	github.com/segmentio/kafka-go v0.4.37
 	github.com/spf13/viper v1.18.2
 	github.com/wb-go/wbf v0.0.8
 )
@@ -37,6 +36,7 @@ require (
 	github.com/rs/zerolog v1.30.0 // indirect
 	github.com/sagikazarmark/locafero v0.4.0 // indirect
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect
+	github.com/segmentio/kafka-go v0.4.37 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect
 	github.com/spf13/afero v1.11.0 // indirect
 	github.com/spf13/cast v1.6.0 // indirect
