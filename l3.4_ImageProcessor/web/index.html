@@ -8,13 +8,12 @@
     h1 { color: #333; }
     #gallery { margin-top: 20px; display: flex; flex-wrap: wrap; gap: 20px; }
     .image-card { border: 1px solid #ccc; padding: 10px; width: 200px; text-align: center; }
-    .image-card img { max-width: 100%; max-height: 150px; display: block; margin-bottom: 10px; }
+    .image-card img { max-width: 100%; max-height: 150px; display: block; margin-bottom: 10px; cursor: pointer; }
     button { margin-top: 5px; padding: 5px 10px; cursor: pointer; }
   </style>
 </head>
 <body>
   <h1>Image Processor</h1>
-
 
   <form id="uploadForm">
     <input type="file" name="image" accept="image/*" required>
@@ -51,6 +50,15 @@
       card.appendChild(statusDiv);
 
       const img = document.createElement('img');
+      img.title = "Кликните для открытия в новой вкладке";
+      img.style.opacity = 0.5; // пока обрабатывается
+      img.onclick = () => {
+        if (img.src) {
+          window.open(img.src, '_blank'); // открываем blob URL
+        } else {
+          alert('Изображение ещё обрабатывается');
+        }
+      };
       card.appendChild(img);
 
       const deleteBtn = document.createElement('button');
@@ -73,12 +81,14 @@
           const blob = await resp.blob();
           const url = URL.createObjectURL(blob);
           imgEl.src = url;
+          imgEl.style.opacity = 1; // теперь готово
           statusEl.textContent = 'Статус: completed';
           clearInterval(interval);
         } else {
           clearInterval(interval);
           const data = await resp.json();
           statusEl.textContent = 'Ошибка: ' + data.error;
+          imgEl.style.opacity = 0.5;
         }
       }, pollingInterval);
     }
