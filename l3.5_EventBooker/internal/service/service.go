@@ -12,9 +12,7 @@ type Service struct {
 }
 
 func New(st Storage) *Service {
-	return &Service{
-		storage: st,
-	}
+	return &Service{storage: st}
 }
 
 func (s *Service) CreateEvent(ctx context.Context, event *model.Event) error {
@@ -25,6 +23,26 @@ func (s *Service) CreateEvent(ctx context.Context, event *model.Event) error {
 	if err := s.storage.CreateEvent(ctx, event); err != nil {
 		return err
 	}
-
 	return nil
+}
+
+func (s *Service) BookEvent(eventID, seats int) (*model.Booking, error) {
+	event, err := s.GetEvent(eventID)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.storage.BookEvent(context.Background(), eventID, seats, event.PaymentTTL)
+}
+
+func (s *Service) ConfirmBooking(bookingID int) error {
+	return s.storage.ConfirmBooking(context.Background(), bookingID)
+}
+
+func (s *Service) GetEvent(eventID int) (*model.Event, error) {
+	return s.storage.GetEvent(context.Background(), eventID)
+}
+
+func (s *Service) CancelExpiredBookings() error {
+	return s.storage.CancelExpiredBookings(context.Background())
 }

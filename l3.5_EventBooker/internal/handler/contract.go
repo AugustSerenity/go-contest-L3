@@ -8,4 +8,7 @@ import (
 
 type Service interface {
 	CreateEvent(context.Context, *model.Event) error
+	BookEvent(int, int) (*model.Booking, error)
+	ConfirmBooking(int) error
+	GetEvent(int) (*model.Event, error)
 }

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"time"
+
 	"github.com/AugustSerenity/go-contest-L3/l3.5_EventBooker/internal/config"
 	"github.com/AugustSerenity/go-contest-L3/l3.5_EventBooker/internal/handler"
 	"github.com/AugustSerenity/go-contest-L3/l3.5_EventBooker/internal/service"
@@ -30,13 +32,31 @@ func main() {
 	defer storage.CloseDB(db)
 
 	store := storage.New(db)
-
 	srv := service.New(store)
+
+	go startExpiredBookingWorker(srv)
 
 	h := handler.New(srv)
 	zlog.Logger.Info().Str("addr", cfg.Server.Address).Msg("starting server")
 	if err := h.Router().Run(cfg.Server.Address); err != nil {
 		zlog.Logger.Fatal().Err(err).Msg("server failed to start")
 	}
+}
 
+func startExpiredBookingWorker(srv *service.Service) {
+	ticker := time.NewTicker(1 * time.Minute)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			if err := cancelExpiredBookings(srv); err != nil {
+				zlog.Logger.Error().Err(err).Msg("failed to cancel expired bookings")
+			}
+		}
+	}
+}
+
+func cancelExpiredBookings(srv *service.Service) error {
+	return srv.CancelExpiredBookings()
 }

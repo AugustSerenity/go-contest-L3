@@ -14,9 +14,7 @@ type Handler struct {
 }
 
 func New(s Service) *Handler {
-	return &Handler{
-		service: s,
-	}
+	return &Handler{service: s}
 }
 
 func (h *Handler) Router() *ginext.Engine {
@@ -58,7 +56,6 @@ func (h *Handler) CreateEvent(c *ginext.Context) {
 		Capacity:  event.Capacity,
 		FreeSeats: event.FreeSeats,
 	})
-
 }
 
 func (h *Handler) BookEvent(c *ginext.Context) {
@@ -68,7 +65,12 @@ func (h *Handler) BookEvent(c *ginext.Context) {
 		return
 	}
 
-	eventID, _ := strconv.Atoi(c.Param("id"))
+	eventID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, ginext.H{"error": "invalid event ID"})
+		return
+	}
+
 	booking, err := h.service.BookEvent(eventID, req.Seats)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, ginext.H{"error": err.Error()})
@@ -86,7 +88,11 @@ func (h *Handler) BookEvent(c *ginext.Context) {
 }
 
 func (h *Handler) ConfirmBooking(c *ginext.Context) {
-	bookingID, _ := strconv.Atoi(c.Param("id"))
+	bookingID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, ginext.H{"error": "invalid booking ID"})
+		return
+	}
 
 	if err := h.service.ConfirmBooking(bookingID); err != nil {
 		c.JSON(http.StatusInternalServerError, ginext.H{"error": err.Error()})
@@ -97,7 +103,11 @@ func (h *Handler) ConfirmBooking(c *ginext.Context) {
 }
 
 func (h *Handler) GetEvent(c *ginext.Context) {
-	eventID, _ := strconv.Atoi(c.Param("id"))
+	eventID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, ginext.H{"error": "invalid event ID"})
+		return
+	}
 
 	event, err := h.service.GetEvent(eventID)
 	if err != nil {

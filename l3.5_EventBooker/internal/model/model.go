@@ -16,10 +16,8 @@ type Event struct {
 type Booking struct {
 	ID        int       `json:"id"`
 	EventID   int       `json:"event_id"`
-	UserID    int       `json:"user_id"`
 	Seats     int       `json:"seats"`
 	Paid      bool      `json:"paid"`
 	CreatedAt time.Time `json:"created_at"`
 	ExpiresAt time.Time `json:"expires_at"`
 }
-
