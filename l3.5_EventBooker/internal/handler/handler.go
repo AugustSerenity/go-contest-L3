@@ -38,10 +38,11 @@ func (h *Handler) CreateEvent(c *ginext.Context) {
 		Name:       req.Name,
 		Date:       req.Date,
 		Capacity:   req.Capacity,
+		FreeSeats:  req.Capacity,
 		PaymentTTL: req.PaymentTTL,
 	}
 
-	if err := h.service.CreateEvent(&event); err != nil {
+	if err := h.service.CreateEvent(c.Request.Context(), &event); err != nil {
 		c.JSON(http.StatusInternalServerError, ginext.H{"error": err.Error()})
 		return
 	}
@@ -51,6 +52,7 @@ func (h *Handler) CreateEvent(c *ginext.Context) {
 		Name:      event.Name,
 		Date:      event.Date,
 		Capacity:  event.Capacity,
-		FreeSeats: event.Capacity,
+		FreeSeats: event.FreeSeats,
 	})
+
 }

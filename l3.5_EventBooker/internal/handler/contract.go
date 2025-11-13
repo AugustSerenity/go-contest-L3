@@ -1,7 +1,11 @@
 package handler
 
-import "github.com/AugustSerenity/go-contest-L3/l3.5_EventBooker/internal/model"
+import (
+	"context"
+
+	"github.com/AugustSerenity/go-contest-L3/l3.5_EventBooker/internal/model"
+)
 
 type Service interface {
-	CreateEvent(model.Event) error
+	CreateEvent(context.Context, *model.Event) error
 }
