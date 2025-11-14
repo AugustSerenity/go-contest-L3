@@ -25,6 +25,8 @@ func (h *Handler) Router() *ginext.Engine {
 	router.POST("/events/:id/book", h.BookEvent)
 	router.POST("/events/:id/confirm", h.ConfirmBooking)
 	router.GET("/events/:id", h.GetEvent)
+	router.GET("/events", h.GetEvents)
+	router.GET("/events/:id/bookings", h.GetEventBookings)
 
 	router.Static("/static", "./web/static")
 	router.LoadHTMLGlob("web/*.html")
@@ -129,4 +131,30 @@ func (h *Handler) GetEvent(c *ginext.Context) {
 		Capacity:  event.Capacity,
 		FreeSeats: event.FreeSeats,
 	})
+}
+
+func (h *Handler) GetEvents(c *ginext.Context) {
+	events, err := h.service.GetEvents()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, ginext.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, events)
+}
+
+func (h *Handler) GetEventBookings(c *ginext.Context) {
+	eventID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, ginext.H{"error": "invalid event ID"})
+		return
+	}
+
+	bookings, err := h.service.GetEventBookings(eventID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, ginext.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, bookings)
 }

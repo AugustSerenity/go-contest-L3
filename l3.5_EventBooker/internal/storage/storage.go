@@ -173,3 +173,42 @@ func (st *Storage) CancelExpiredBookings(ctx context.Context) error {
 
 	return tx.Commit()
 }
+
+func (st *Storage) GetEvents(ctx context.Context) ([]model.Event, error) {
+	rows, err := st.db.Master.QueryContext(ctx,
+		`SELECT id, name, capacity, free_seats FROM events ORDER BY id`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var events []model.Event
+	for rows.Next() {
+		var e model.Event
+		if err := rows.Scan(&e.ID, &e.Name, &e.Capacity, &e.FreeSeats); err != nil {
+			return nil, err
+		}
+		events = append(events, e)
+	}
+	return events, nil
+}
+
+func (st *Storage) GetEventBookings(ctx context.Context, eventID int) ([]model.Booking, error) {
+	rows, err := st.db.Master.QueryContext(ctx,
+		`SELECT id, event_id, seats, paid, created_at, expires_at 
+		 FROM bookings WHERE event_id=$1 ORDER BY id`, eventID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var list []model.Booking
+	for rows.Next() {
+		var b model.Booking
+		if err := rows.Scan(&b.ID, &b.EventID, &b.Seats, &b.Paid, &b.CreatedAt, &b.ExpiresAt); err != nil {
+			return nil, err
+		}
+		list = append(list, b)
+	}
+	return list, nil
+}

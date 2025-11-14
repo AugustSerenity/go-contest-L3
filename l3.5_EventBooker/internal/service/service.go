@@ -46,3 +46,11 @@ func (s *Service) GetEvent(eventID int) (*model.Event, error) {
 func (s *Service) CancelExpiredBookings() error {
 	return s.storage.CancelExpiredBookings(context.Background())
 }
+
+func (s *Service) GetEvents() ([]model.Event, error) {
+	return s.storage.GetEvents(context.Background())
+}
+
+func (s *Service) GetEventBookings(eventID int) ([]model.Booking, error) {
+	return s.storage.GetEventBookings(context.Background(), eventID)
+}

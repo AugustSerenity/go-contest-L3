@@ -1,7 +1,7 @@
 package main
 
 import (
-	"time"
+	"time" 
 
 	"github.com/AugustSerenity/go-contest-L3/l3.5_EventBooker/internal/config"
 	"github.com/AugustSerenity/go-contest-L3/l3.5_EventBooker/internal/handler"

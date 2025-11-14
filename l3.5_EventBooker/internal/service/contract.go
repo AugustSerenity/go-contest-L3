@@ -14,4 +14,6 @@ type Storage interface {
 	CancelBooking(ctx context.Context, bookingID int) error
 	GetEvent(ctx context.Context, eventID int) (*model.Event, error)
 	CancelExpiredBookings(context.Context) error
+	GetEvents(ctx context.Context) ([]model.Event, error)
+	GetEventBookings(ctx context.Context, eventID int) ([]model.Booking, error)
 }

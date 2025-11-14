@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin – Event Booker</title>
+</head>
+<body>
+<h1>Admin Panel</h1>
+
+<h2>Create Event</h2>
+<form id="createEventForm">
+    <label>Name: <input type="text" id="name" required></label><br><br>
+    <label>Date: <input type="datetime-local" id="date" required></label><br><br>
+    <label>Capacity: <input type="number" id="capacity" required></label><br><br>
+    <label>Payment TTL (minutes): <input type="number" id="ttl" required></label><br><br>
+    <button type="submit">Create</button>
+</form>
+
+<hr>
+
+<h2>Events</h2>
+<button onclick="loadEvents()">Refresh</button>
+<ul id="eventsList"></ul>
+
+<hr>
+
+<h2>Bookings of Event</h2>
+<label>Event ID: <input id="eventLookupId" type="number"></label>
+<button onclick="loadBookings()">Load</button>
+
+<ul id="bookingsList"></ul>
+
+<script>
+async function createEvent(e) {
+    e.preventDefault();
+
+    const body = {
+        name: document.getElementById("name").value,
+        date: new Date(document.getElementById("date").value).toISOString(),
+        capacity: Number(document.getElementById("capacity").value),
+        payment_ttl: Number(document.getElementById("ttl").value) // в минутах
+    };
+
+    const res = await fetch("/events", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(body)
+    });
+
+    if (!res.ok) {
+        alert("Ошибка создания события");
+        return;
+    }
+
+    loadEvents();
+}
+
+document.getElementById("createEventForm").addEventListener("submit", createEvent);
+
+async function loadEvents() {
+    const res = await fetch("/events");
+    if (!res.ok) {
+        alert("Ошибка загрузки событий");
+        return;
+    }
+    const events = await res.json();
+
+    const list = document.getElementById("eventsList");
+    list.innerHTML = "";
+
+    events.forEach(e => {
+        const li = document.createElement("li");
+        li.innerHTML = `
+            <b>${e.name}</b> | 
+            Free: ${e.availableSeats} / ${e.capacity} | 
+            ID: ${e.id}
+        `;
+        list.appendChild(li);
+    });
+}
+
+async function loadBookings() {
+    const eventID = document.getElementById("eventLookupId").value;
+
+    if (!eventID) {
+        alert("Enter event ID");
+        return;
+    }
+
+    const res = await fetch(`/events/${eventID}/bookings`);
+    if (!res.ok) {
+        alert("Ошибка загрузки бронирований");
+        return;
+    }
+
+    const bookings = await res.json();
+    const list = document.getElementById("bookingsList");
+    list.innerHTML = "";
+
+    bookings.forEach(b => {
+        const li = document.createElement("li");
+        li.innerHTML = `
+            Booking #${b.id} |
+            Seats: ${b.seats} | 
+            Confirmed: ${b.confirmed ? "YES" : "NO"} |
+            Expires: ${new Date(b.expires_at).toLocaleString()}
+        `;
+        list.appendChild(li);
+    });
+}
+
+</script>
+</body>
+</html>

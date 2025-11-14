@@ -11,4 +11,6 @@ type Service interface {
 	BookEvent(int, int) (*model.Booking, error)
 	ConfirmBooking(int) error
 	GetEvent(int) (*model.Event, error)
+	GetEvents() ([]model.Event, error)
+	GetEventBookings(eventID int) ([]model.Booking, error)
 }
