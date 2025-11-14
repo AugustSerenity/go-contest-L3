@@ -26,6 +26,13 @@ func (h *Handler) Router() *ginext.Engine {
 	router.POST("/events/:id/confirm", h.ConfirmBooking)
 	router.GET("/events/:id", h.GetEvent)
 
+	router.Static("/static", "./web/static")
+	router.LoadHTMLGlob("web/*.html")
+
+	router.GET("/", func(c *ginext.Context) {
+		c.HTML(http.StatusOK, "index.html", nil)
+	})
+
 	return router
 }
 
