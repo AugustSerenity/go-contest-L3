@@ -6,95 +6,112 @@
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <h1>Админ-панель EventBooker</h1>
+<h1>Админ-панель EventBooker <span class="admin-badge">Администратор</span></h1>
 
-    <div class="btn-group">
-        <button onclick="location.href='/'">Главная</button>
-        <button onclick="location.href='/user'">Пользователь</button>
-    </div>
+<div class="btn-group">
+    <button onclick="location.href='/'">Главная</button>
+    <button onclick="location.href='/user'">Пользователь</button>
+</div>
 
-    <div class="admin-section">
-        <h2>Создать мероприятие</h2>
-        <div class="form-group">
-            <label for="event-name">Название:</label>
-            <input type="text" id="event-name">
-        </div>
-        <div class="form-group">
-            <label for="event-datetime">Дата и время:</label>
-            <input type="text" id="event-datetime" placeholder="дд.мм.гггг, --:--">
-        </div>
-        <div class="form-group">
-            <label for="event-capacity">Вместимость:</label>
-            <input type="number" id="event-capacity" min="1">
-        </div>
-        <div class="form-group">
-            <label for="event-ttl">TTL оплаты (минуты):</label>
-            <input type="number" id="event-ttl" value="30" min="1">
-        </div>
-        <button onclick="createEvent()">Создать мероприятие</button>
-        <div id="create-result"></div>
-    </div>
+<div class="admin-section">
+    <h2>Создать мероприятие</h2>
+    <label>Название: <input type="text" id="event-name" placeholder="Название мероприятия"></label><br>
+    <label>Дата и время: <input type="datetime-local" id="event-datetime"></label><br>
+    <label>Вместимость: <input type="number" id="event-capacity" min="1" placeholder="Количество мест"></label><br>
+    <label>TTL оплаты (мин): <input type="number" id="event-ttl" value="30" min="1" title="Время на оплату в минутах"></label><br>
+    <!-- ИСПРАВЛЕНО: изменено имя функции -->
+    <button onclick="createNewEvent()">Создать мероприятие</button>
+    <div id="create-result"></div>
+</div>
 
-    <div class="admin-section">
-        <h2>Управление бронированиями</h2>
-        <div class="form-group">
-            <label for="admin-event-id">ID мероприятия:</label>
-            <input type="number" id="admin-event-id">
-            <button onclick="loadBookings()">Показать бронирования</button>
-        </div>
-        <div id="bookings-list">Выберите мероприятие для просмотра бронирований</div>
-    </div>
+<div class="admin-section">
+    <h2>Все мероприятия</h2>
+    <button onclick="loadAllEvents()">Обновить список мероприятий</button>
+    <div id="all-events-list">Загрузка...</div>
+</div>
 
-    <script src="/static/eventLib.js"></script>
-    <script>
-        async function createEvent() {
-            const name = document.getElementById('event-name').value;
-            const datetime = document.getElementById('event-datetime').value;
-            const capacity = parseInt(document.getElementById('event-capacity').value);
-            const ttl = parseInt(document.getElementById('event-ttl').value);
-            const resultDiv = document.getElementById('create-result');
+<div class="admin-section">
+    <h2>Управление бронированиями</h2>
+    <label>ID мероприятия: <input type="number" id="admin-event-id" placeholder="Введите ID мероприятия"></label>
+    <button onclick="loadBookings()">Показать бронирования</button>
+    <button onclick="startAdminAutoRefresh()">Автообновление ВКЛ</button>
+    <button onclick="stopAdminAutoRefresh()">Автообновление ВЫКЛ</button>
+    <div id="bookings-list">Выберите мероприятие для просмотра бронирований</div>
+</div>
 
-            const result = await EventAPI.createEvent({name, datetime, capacity, ttl});
+<script src="/static/eventLib.js"></script>
+<script>
+let adminRefreshInterval = null;
 
-            if (result.error) {
-                resultDiv.innerHTML = `<div class="error">Ошибка: ${result.error}</div>`;
-            } else {
-                resultDiv.innerHTML = `<div class="success">Мероприятие создано успешно! ID: ${result.id}</div>`;
-            }
-        }
+async function createNewEvent() {
+    const name = document.getElementById('event-name').value;
+    const datetime = document.getElementById('event-datetime').value;
+    const capacity = parseInt(document.getElementById('event-capacity').value);
+    const ttl = parseInt(document.getElementById('event-ttl').value);
+    const resultDiv = document.getElementById('create-result');
 
-        async function loadBookings() {
-            const eventId = parseInt(document.getElementById('admin-event-id').value);
-            const container = document.getElementById('bookings-list');
+    if (!name || !datetime || !capacity || !ttl) {
+        resultDiv.innerHTML = '<div class="error">Заполните все поля корректно!</div>';
+        return;
+    }
 
-            if (!eventId) {
-                container.innerHTML = '<div class="error">Введите ID мероприятия</div>';
-                return;
-            }
+    const result = await EventAPI.createEvent({ name, date: datetime, capacity, paymentTTL: ttl });
 
-            const bookings = await EventAPI.fetchBookings(eventId);
-            container.innerHTML = '';
+    if (result.error) {
+        resultDiv.innerHTML = `<div class="error">Ошибка: ${result.error}</div>`;
+    } else {
+        resultDiv.innerHTML = `<div class="success">Мероприятие создано! ID: ${result.id}</div>`;
+        document.getElementById('event-name').value = '';
+        document.getElementById('event-datetime').value = '';
+        document.getElementById('event-capacity').value = '';
+        loadAllEvents();
+    }
+}
 
-            bookings.forEach(booking => {
-                const bookingDiv = document.createElement('div');
-                bookingDiv.classList.add('booking');
-                bookingDiv.innerHTML = `
-                    <p>Бронь #${booking.id} | Мест: ${booking.seats} | Статус: ${booking.paid ? '✅ Оплачено' : '⏳ Ожидает оплаты'}</p>
-                `;
+async function loadAllEvents() {
+    const container = document.getElementById('all-events-list');
+    const events = await EventAPI.fetchEvents();
+    EventAPI.renderEvents(container, events, false);
+}
 
-                if (!booking.paid) {
-                    const confirmBtn = document.createElement('button');
-                    confirmBtn.textContent = 'Подтвердить';
-                    confirmBtn.onclick = async () => {
-                        await EventAPI.confirmBooking(booking.id);
-                        loadBookings();
-                    };
-                    bookingDiv.appendChild(confirmBtn);
-                }
+async function loadBookings() {
+    const eventId = parseInt(document.getElementById('admin-event-id').value);
+    const container = document.getElementById('bookings-list');
 
-                container.appendChild(bookingDiv);
-            });
-        }
-    </script>
+    if (!eventId) {
+        container.innerHTML = '<div class="error">Введите ID мероприятия</div>';
+        return;
+    }
+
+    const bookings = await EventAPI.fetchBookings(eventId);
+    // ИСПРАВЛЕНО: false - не показывать кнопки подтверждения у админа
+    EventAPI.renderBookings(container, bookings, eventId, false);
+}
+
+function startAdminAutoRefresh() {
+    const eventId = parseInt(document.getElementById('admin-event-id').value);
+    if (!eventId) { 
+        alert('Сначала введите ID мероприятия'); 
+        return; 
+    }
+    
+    if (adminRefreshInterval) clearInterval(adminRefreshInterval);
+    
+    const container = document.getElementById('bookings-list');
+    // ИСПРАВЛЕНО: false - не показывать кнопки подтверждения у админа
+    adminRefreshInterval = EventAPI.startAutoRefresh(container, eventId, 10000, false);
+    alert('Автообновление включено для админ-панели');
+}
+
+function stopAdminAutoRefresh() {
+    if (adminRefreshInterval) {
+        clearInterval(adminRefreshInterval);
+        adminRefreshInterval = null;
+        alert('Автообновление остановлено');
+    }
+}
+
+loadAllEvents();
+</script>
 </body>
 </html>

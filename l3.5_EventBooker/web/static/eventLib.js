@@ -9,7 +9,7 @@ const EventAPI = {
             return data;
         } catch (err) {
             console.error('Ошибка fetchEvents:', err);
-            return { error: err.error || 'Ошибка сети' };
+            return { error: err.error || err.message || 'Ошибка сети' };
         }
     },
 
@@ -25,23 +25,32 @@ const EventAPI = {
             return data;
         } catch (err) {
             console.error('Ошибка bookEvent:', err);
-            return { error: err.error || 'Ошибка сети' };
+            return { error: err.error || err.message || 'Ошибка сети' };
         }
     },
 
     async createEvent({ name, date, capacity, paymentTTL }) {
         try {
+            // Конвертируем дату в RFC3339 формат
+            const dateObj = new Date(date);
+            const rfc3339Date = dateObj.toISOString();
+            
             const res = await fetch(`${this.baseUrl}/events`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, date, capacity, paymentTTL })
+                body: JSON.stringify({ 
+                    name, 
+                    date: rfc3339Date, 
+                    capacity, 
+                    paymentTTL 
+                })
             });
             const data = await res.json();
             if (!res.ok) throw data;
             return data;
         } catch (err) {
             console.error('Ошибка createEvent:', err);
-            return { error: err.error || 'Ошибка сети' };
+            return { error: err.error || err.message || 'Ошибка сети' };
         }
     },
 
@@ -53,7 +62,7 @@ const EventAPI = {
             return data;
         } catch (err) {
             console.error('Ошибка fetchBookings:', err);
-            return { error: err.error || 'Ошибка сети' };
+            return { error: err.error || err.message || 'Ошибка сети' };
         }
     },
 
@@ -67,11 +76,11 @@ const EventAPI = {
             return data;
         } catch (err) {
             console.error('Ошибка confirmBooking:', err);
-            return { error: err.error || 'Ошибка сети' };
+            return { error: err.error || err.message || 'Ошибка сети' };
         }
     },
 
-    renderEvents(container, events) {
+    renderEvents(container, events, showSelectButton = true) {
         if (!events || events.error) {
             container.innerHTML = `<div class="error">Ошибка: ${events?.error || 'Нет данных'}</div>`;
             return;
@@ -80,27 +89,32 @@ const EventAPI = {
             container.innerHTML = '<div class="no-events">Событий нет</div>';
             return;
         }
-        
-        container.innerHTML = events.map(event => `
-            <div class="event-card">
-                <h3>${event.name}</h3>
-                <div class="event-info">
-                    <strong>ID:</strong> ${event.id} | 
-                    <strong>Дата:</strong> ${new Date(event.date).toLocaleString()} | 
-                    <strong>Места:</strong> ${event.freeSeats} / ${event.capacity}
-                </div>
-                ${event.freeSeats === 0 ? '<div class="sold-out">Мест нет</div>' : '<div class="available">Есть свободные места</div>'}
-                <button onclick="selectEvent(${event.id})" class="select-event-btn">
+
+        container.innerHTML = events.map(event => {
+            const selectButton = showSelectButton ? `
+                <button onclick="selectEvent(${event.id}, this)" class="select-event-btn">
                     Выбрать это мероприятие
                 </button>
-            </div>
-        `).join('');
+            ` : '';
+
+            return `
+                <div class="event-card">
+                    <h3>${event.name}</h3>
+                    <div class="event-info">
+                        <strong>ID:</strong> ${event.id} | 
+                        <strong>Дата:</strong> ${new Date(event.date).toLocaleString()} | 
+                        <strong>Места:</strong> ${event.freeSeats} / ${event.capacity}
+                    </div>
+                    <div class="${event.freeSeats === 0 ? 'status-expired' : 'status-pending'}">
+                        ${event.freeSeats === 0 ? 'Мест нет' : 'Есть свободные места'}
+                    </div>
+                    ${selectButton}
+                </div>
+            `;
+        }).join('');
     },
 
-    renderBookings(container, bookings, eventId = null) {
-        console.log('=== RENDER BOOKINGS START ===');
-        console.log('Bookings data:', bookings);
-        
+    renderBookings(container, bookings, eventId = null, showConfirmButton = true) {
         container.innerHTML = '';
 
         if (!bookings || bookings.error) {
@@ -113,41 +127,40 @@ const EventAPI = {
         }
 
         const now = new Date();
-        console.log('Current time:', now);
-        
+
         container.innerHTML = bookings.map(booking => {
             const expiresAt = new Date(booking.expiresAt);
             const isExpired = !booking.paid && expiresAt < now;
-            
-            console.log('Processing booking:', booking.id, 'paid:', booking.paid, 'expired:', isExpired);
-            
+
+            let statusClass = '';
             let statusText = '';
+
             if (booking.paid) {
-                statusText = '<span style="color: green; font-weight: bold;">✅ ОПЛАЧЕНО</span>';
+                statusClass = 'status-paid';
+                statusText = '✅ Оплачено';
             } else if (isExpired) {
-                statusText = '<span style="color: red; font-weight: bold;">❌ ПРОСРОЧЕНО</span>';
+                statusClass = 'status-expired';
+                statusText = '❌ Просрочено';
             } else {
-                statusText = `<span style="color: orange; font-weight: bold;">⏳ Ожидает оплаты</span>`;
+                statusClass = 'status-pending';
+                statusText = '⏳ Ожидает оплаты';
             }
 
-            // КНОПКА ДОБАВЛЯЕТСЯ ВСЕГДА КОГДА НЕ ОПЛАЧЕНО И НЕ ПРОСРОЧЕНО
             let buttonHtml = '';
-            if (!booking.paid && !isExpired) {
-                console.log('ADDING BUTTON for booking:', booking.id);
+            if (showConfirmButton && !booking.paid && !isExpired) {
                 buttonHtml = `
-                    <button class="confirm-btn" onclick="window.confirmBooking(${booking.id}, ${eventId})" 
-                            style="background: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-top: 10px; font-size: 16px;">
-                        ПОДТВЕРДИТЬ ОПЛАТУ
+                    <button class="confirm-btn" onclick="window.confirmBooking(${booking.id}, ${eventId})">
+                        Подтвердить оплату
                     </button>
                 `;
             }
 
             return `
-                <div class="booking-card" style="border: 2px solid ${booking.paid ? 'green' : isExpired ? 'red' : 'orange'}; padding: 15px; margin: 10px 0; border-radius: 8px;">
+                <div class="booking-card ${booking.paid ? 'confirmed-now' : ''}" 
+                     style="border: 2px solid ${booking.paid ? '#28a745' : isExpired ? '#dc3545' : '#ffc107'};">
                     <div class="booking-info">
-                        <strong>Бронь #${booking.id}</strong> | 
-                        Мест: ${booking.seats} | 
-                        Статус: ${statusText}
+                        <strong>Бронь #${booking.id}</strong> | Мест: ${booking.seats} | 
+                        <span class="${statusClass}">${statusText}</span>
                     </div>
                     <div class="booking-dates">
                         Создано: ${new Date(booking.createdAt).toLocaleString()} | 
@@ -157,32 +170,95 @@ const EventAPI = {
                 </div>
             `;
         }).join('');
-        
-        console.log('=== RENDER BOOKINGS END ===');
     },
 
-    startAutoRefresh(container, eventId, interval = 30000) {
+    startAutoRefresh(container, eventId, interval = 10000, showConfirmButton = true) {
         return setInterval(async () => {
-            console.log('Автообновление...');
+            console.log('Автообновление бронирований...');
             const bookings = await this.fetchBookings(eventId);
-            this.renderBookings(container, bookings, eventId);
+            this.renderBookings(container, bookings, eventId, showConfirmButton);
         }, interval);
     }
 };
 
-// ✅ ВАЖНО: Глобальная функция ДОЛЖНА быть определена
+// Глобальная функция для кнопки подтверждения (только для пользователя)
 window.confirmBooking = async function(bookingId, eventId) {
-    console.log('Confirming booking:', bookingId);
+    if (!confirm('Подтвердить оплату брони #' + bookingId + '?')) {
+        return;
+    }
+
     const result = await EventAPI.confirmBooking(bookingId);
     if (result.error) {
         alert('Ошибка: ' + result.error);
     } else {
-        alert('Бронь подтверждена! Обновляю список...');
-        // Обновляем список
-        setTimeout(async () => {
-            const container = document.getElementById('my-bookings');
-            const newBookings = await EventAPI.fetchBookings(eventId);
-            EventAPI.renderBookings(container, newBookings, eventId);
-        }, 1000);
+        // Обновляем бронирования на ВСЕХ страницах где они отображаются
+        updateAllBookingDisplays(eventId);
+        
+        // Показываем сообщение об успехе
+        showSuccessMessage('✅ Бронь успешно подтверждена!');
+    }
+};
+
+// Функция для обновления всех отображений бронирований
+async function updateAllBookingDisplays(eventId) {
+    // Обновляем на странице пользователя
+    const userContainer = document.getElementById('my-bookings');
+    if (userContainer) {
+        const bookings = await EventAPI.fetchBookings(eventId);
+        EventAPI.renderBookings(userContainer, bookings, eventId, true);
+    }
+    
+    // Обновляем на странице админа
+    const adminContainer = document.getElementById('bookings-list');
+    if (adminContainer) {
+        const bookings = await EventAPI.fetchBookings(eventId);
+        EventAPI.renderBookings(adminContainer, bookings, eventId, false);
+    }
+}
+
+// Функция для показа сообщения об успехе
+function showSuccessMessage(message) {
+    // Показываем на странице пользователя
+    const userContainer = document.getElementById('my-bookings');
+    if (userContainer) {
+        const successMsg = document.createElement('div');
+        successMsg.className = 'confirmation-success';
+        successMsg.textContent = message;
+        userContainer.prepend(successMsg);
+        setTimeout(() => successMsg.remove(), 3000);
+    }
+    
+    // Показываем на странице админа
+    const adminContainer = document.getElementById('bookings-list');
+    if (adminContainer) {
+        const successMsg = document.createElement('div');
+        successMsg.className = 'confirmation-success';
+        successMsg.textContent = message;
+        adminContainer.prepend(successMsg);
+        setTimeout(() => successMsg.remove(), 3000);
+    }
+}
+
+// Функция выбора мероприятия
+window.selectEvent = function(eventId, element) {
+    document.getElementById('booking-event-id').value = eventId;
+    document.getElementById('my-bookings-event-id').value = eventId;
+    
+    // Подсвечиваем выбранное мероприятие
+    document.querySelectorAll('.event-card').forEach(card => {
+        card.style.border = '1px solid #ccc';
+    });
+    
+    // Используем element для поиска родительской карточки
+    if (element && element.closest) {
+        element.closest('.event-card').style.border = '2px solid #007bff';
+    }
+    
+    // Загружаем бронирования для выбранного мероприятия
+    const container = document.getElementById('my-bookings');
+    if (container) {
+        EventAPI.fetchBookings(eventId).then(bookings => 
+            EventAPI.renderBookings(container, bookings, eventId, true)
+        );
     }
 };
