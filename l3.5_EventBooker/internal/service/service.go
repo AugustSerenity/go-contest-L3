@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/AugustSerenity/go-contest-L3/l3.5_EventBooker/internal/model"
@@ -16,41 +17,45 @@ func New(st Storage) *Service {
 }
 
 func (s *Service) CreateEvent(ctx context.Context, event *model.Event) error {
-	event.FreeSeats = event.Capacity
 	event.CreatedAt = time.Now()
 	event.UpdatedAt = event.CreatedAt
+	event.FreeSeats = event.Capacity
 
-	if err := s.storage.CreateEvent(ctx, event); err != nil {
-		return err
-	}
-	return nil
+	return s.storage.CreateEvent(ctx, event)
 }
 
-func (s *Service) BookEvent(eventID, seats int) (*model.Booking, error) {
-	event, err := s.GetEvent(eventID)
+func (s *Service) BookEvent(eventId, seats int) (*model.Booking, error) {
+	event, err := s.storage.GetEvent(context.Background(), eventId)
 	if err != nil {
-		return nil, err
+		return nil, errors.New("event not found")
 	}
 
-	return s.storage.BookEvent(context.Background(), eventID, seats, event.PaymentTTL)
+	ttl := time.Duration(event.PaymentTTL) * time.Second
+
+	return s.storage.BookEvent(
+		context.Background(),
+		eventId,
+		seats,
+		ttl,
+	)
 }
 
-func (s *Service) ConfirmBooking(bookingID int) error {
-	return s.storage.ConfirmBooking(context.Background(), bookingID)
+func (s *Service) ConfirmBooking(bookingId int) error {
+	return s.storage.ConfirmBooking(context.Background(), bookingId)
 }
 
-func (s *Service) GetEvent(eventID int) (*model.Event, error) {
-	return s.storage.GetEvent(context.Background(), eventID)
-}
-
-func (s *Service) CancelExpiredBookings() error {
-	return s.storage.CancelExpiredBookings(context.Background())
+func (s *Service) GetEvent(id int) (*model.Event, error) {
+	return s.storage.GetEvent(context.Background(), id)
 }
 
 func (s *Service) GetEvents() ([]model.Event, error) {
 	return s.storage.GetEvents(context.Background())
 }
 
-func (s *Service) GetEventBookings(eventID int) ([]model.Booking, error) {
-	return s.storage.GetEventBookings(context.Background(), eventID)
+func (s *Service) GetEventBookings(eventId int) ([]model.Booking, error) {
+	return s.storage.GetEventBookings(context.Background(), eventId)
+}
+
+func (s *Service) CancelExpiredBookings() error {
+	return s.storage.CancelExpiredBookings(context.Background())
 }

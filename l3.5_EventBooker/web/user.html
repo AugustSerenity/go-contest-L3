@@ -1,72 +1,130 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <title>EventBooker - User</title>
+    <meta charset="UTF-8">
+    <title>Пользователь - EventBooker</title>
+    <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-  <h1>События</h1>
-  <div id="events"></div>
+    <h1>Бронирование мероприятий</h1>
 
-  <script>
-    async function loadEvents() {
-      const res = await fetch("/events");
-      const events = await res.json();
-      const container = document.getElementById("events");
-      container.innerHTML = "";
+    <div class="btn-group">
+        <button onclick="location.href='/'">Главная</button>
+        <button onclick="location.href='/admin'">Администратор</button>
+    </div>
 
-      events.forEach(event => {
-        const div = document.createElement("div");
-        div.innerHTML = `
-          <h2>${event.name} (${event.date})</h2>
-          <p>Свободные места: ${event.availableSeats}</p>
-          <button onclick="book(${event.id})">Забронировать</button>
-          <button onclick="showBookings(${event.id})">Показать брони</button>
-          <div id="bookings-${event.id}"></div>
-        `;
-        container.appendChild(div);
-      });
-    }
+    <div class="user-section">
+        <h2>Доступные мероприятия</h2>
+        <button onclick="loadEvents()">Обновить список</button>
+        <div id="events-list">Загрузка мероприятий...</div>
+    </div>
 
-    async function book(eventID) {
-      const res = await fetch(`/events/${eventID}/book`, { method: "POST" });
-      if (res.ok) {
-        alert("Бронь создана!");
+    <div class="user-section">
+        <h2>Забронировать места</h2>
+        <div class="form-group">
+            <label for="booking-event-id">ID мероприятия:</label>
+            <input type="number" id="booking-event-id" placeholder="Введите ID из списка выше">
+        </div>
+        <div class="form-group">
+            <label for="booking-seats">Количество мест:</label>
+            <input type="number" id="booking-seats" min="1" value="1">
+        </div>
+        <button onclick="bookSeats()">Забронировать места</button>
+        <div id="booking-result"></div>
+    </div>
+
+    <div class="user-section">
+        <h2>Мои бронирования</h2>
+        <div class="form-group">
+            <label for="my-bookings-event-id">ID мероприятия:</label>
+            <input type="number" id="my-bookings-event-id" placeholder="Введите ID мероприятия">
+            <button onclick="loadMyBookings()">Показать бронирования</button>
+            <button onclick="startAutoRefresh()">Автообновление ВКЛ</button>
+            <button onclick="stopAutoRefresh()">Автообновление ВЫКЛ</button>
+        </div>
+        <div id="my-bookings">Выберите мероприятие для просмотра бронирований</div>
+    </div>
+
+    <script src="/static/eventLib.js"></script>
+    <script>
+        let userRefreshInterval = null;
+        let currentEventId = null;
+
+        async function loadEvents() {
+            const container = document.getElementById('events-list');
+            const events = await EventAPI.fetchEvents();
+            EventAPI.renderEvents(container, events);
+        }
+
+        async function bookSeats() {
+            const eventId = parseInt(document.getElementById('booking-event-id').value);
+            const seats = parseInt(document.getElementById('booking-seats').value);
+            const resultDiv = document.getElementById('booking-result');
+
+            if (!eventId || !seats || seats < 1) {
+                resultDiv.innerHTML = '<div class="error">Введите корректный ID мероприятия и количество мест</div>';
+                return;
+            }
+
+            const result = await EventAPI.bookEvent(eventId, seats);
+
+            if (result.error) {
+                resultDiv.innerHTML = `<div class="error">Ошибка: ${result.error}</div>`;
+            } else {
+                const expiresAt = new Date(result.expiresAt);
+                const timeLeft = Math.floor((expiresAt - new Date()) / 1000 / 60);
+
+                resultDiv.innerHTML = `
+                    <div class="success">
+                        <strong>Бронь создана успешно!</strong><br>
+                        ID брони: ${result.id}<br>
+                        Мест: ${result.seats}<br>
+                        Статус: ${result.paid ? 'Оплачено' : 'Ожидает оплаты'}<br>
+                        ${!result.paid ? `Время на оплату: ${timeLeft} минут` : ''}
+                    </div>
+                `;
+
+                loadEvents();
+                loadMyBookings();
+            }
+        }
+
+        async function loadMyBookings() {
+            const eventId = parseInt(document.getElementById('my-bookings-event-id').value);
+            const container = document.getElementById('my-bookings');
+
+            if (!eventId) {
+                container.innerHTML = '<div class="error">Введите ID мероприятия</div>';
+                return;
+            }
+
+            currentEventId = eventId;
+            const bookings = await EventAPI.fetchBookings(eventId);
+            EventAPI.renderBookings(container, bookings, eventId);
+        }
+
+        function startAutoRefresh() {
+            if (!currentEventId) {
+                alert('Сначала выберите мероприятие');
+                return;
+            }
+
+            if (userRefreshInterval) clearInterval(userRefreshInterval);
+
+            const container = document.getElementById('my-bookings');
+            userRefreshInterval = EventAPI.startAutoRefresh(container, currentEventId, 10000);
+            alert('Автообновление включено (каждые 10 секунд)');
+        }
+
+        function stopAutoRefresh() {
+            if (userRefreshInterval) {
+                clearInterval(userRefreshInterval);
+                userRefreshInterval = null;
+                alert('Автообновление остановлено');
+            }
+        }
+
         loadEvents();
-      } else {
-        alert("Ошибка при бронировании");
-      }
-    }
-
-    async function confirmBooking(eventID, bookingID) {
-      const res = await fetch(`/events/${eventID}/confirm`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bookingID })
-      });
-      if (res.ok) {
-        alert("Бронь подтверждена!");
-        showBookings(eventID);
-        loadEvents();
-      } else {
-        alert("Ошибка подтверждения");
-      }
-    }
-
-    async function showBookings(eventID) {
-      const res = await fetch(`/events/${eventID}/bookings`);
-      const bookings = await res.json();
-      const container = document.getElementById(`bookings-${eventID}`);
-      container.innerHTML = "";
-      bookings.forEach(b => {
-        const btn = b.confirmed
-          ? "Подтверждена"
-          : `<button onclick="confirmBooking(${eventID}, ${b.id})">Подтвердить</button>`;
-        container.innerHTML += `<p>Бронь #${b.id} — ${btn}</p>`;
-      });
-    }
-
-    loadEvents();
-  </script>
+    </script>
 </body>
 </html>

@@ -1,31 +1,29 @@
 package dto
 
-import "time"
-
 type CreateEventRequest struct {
-	Name       string        `json:"name" binding:"required"`
-	Date       time.Time     `json:"date"`
-	Capacity   int           `json:"capacity"`
-	PaymentTTL time.Duration `json:"payment_ttl"`
+	Name       string `json:"name"`
+	Date       string `json:"date"`
+	Capacity   int    `json:"capacity"`
+	PaymentTTL int    `json:"paymentTTL"`
 }
 
 type EventResponse struct {
-	ID        int       `json:"id"`
-	Name      string    `json:"name"`
-	Date      time.Time `json:"date"`
-	Capacity  int       `json:"capacity"`
-	FreeSeats int       `json:"free_seats"`
+	ID        int    `json:"id"`
+	Name      string `json:"name"`
+	Date      string `json:"date"`
+	Capacity  int    `json:"capacity"`
+	FreeSeats int    `json:"freeSeats"`
 }
 
 type CreateBookingRequest struct {
-	Seats int `json:"seats" binding:"required"`
+	Seats int `json:"seats"`
 }
 
 type BookingResponse struct {
-	ID        int       `json:"id"`
-	EventID   int       `json:"event_id"`
-	Seats     int       `json:"seats"`
-	Paid      bool      `json:"paid"`
-	CreatedAt time.Time `json:"created_at"`
-	ExpiresAt time.Time `json:"expires_at"`
+	ID        int    `json:"id"`
+	EventID   int    `json:"eventId"`
+	Seats     int    `json:"seats"`
+	Paid      bool   `json:"paid"`
+	CreatedAt string `json:"createdAt"`
+	ExpiresAt string `json:"expiresAt"`
 }

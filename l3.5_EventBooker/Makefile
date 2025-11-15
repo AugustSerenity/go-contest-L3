@@ -8,3 +8,6 @@ lint:
 	golangci-lint run ./...
 
 check: vet lint
+
+clean:
+	docker-compose down --rmi all --volumes --remove-orphans

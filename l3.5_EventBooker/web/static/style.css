@@ -1,0 +1,62 @@
+/* Добавьте эти стили в существующий CSS */
+
+.status-paid {
+    color: #28a745;
+    font-weight: bold;
+}
+
+.status-pending {
+    color: #ffc107;
+    font-weight: bold;
+}
+
+.status-expired {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+.confirmed-now {
+    animation: pulse 2s ease-in-out;
+    border: 2px solid #28a745 !important;
+}
+
+.confirm-btn {
+    background: #28a745 !important;
+    color: white !important;
+    border: none !important;
+    padding: 10px 20px !important;
+    border-radius: 4px !important;
+    cursor: pointer !important;
+    font-size: 14px !important;
+    margin-top: 10px !important;
+    display: block !important;
+}
+
+.confirm-btn:hover {
+    background: #218838 !important;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+}
+
+.confirmation-success {
+    background: #d4edda;
+    color: #155724;
+    padding: 10px;
+    border-radius: 4px;
+    margin-top: 10px;
+    font-weight: bold;
+    text-align: center;
+}
+
+.admin-badge {
+    background: #dc3545;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.8em;
+    margin-left: 5px;
+}

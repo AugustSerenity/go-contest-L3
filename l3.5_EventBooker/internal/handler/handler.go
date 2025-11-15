@@ -3,6 +3,7 @@ package handler
 import (
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/AugustSerenity/go-contest-L3/l3.5_EventBooker/internal/handler/dto"
 	"github.com/AugustSerenity/go-contest-L3/l3.5_EventBooker/internal/model"
@@ -29,10 +30,16 @@ func (h *Handler) Router() *ginext.Engine {
 	router.GET("/events/:id/bookings", h.GetEventBookings)
 
 	router.Static("/static", "./web/static")
-	router.LoadHTMLGlob("web/*.html")
+	router.LoadHTMLGlob("./web/*.html")
 
 	router.GET("/", func(c *ginext.Context) {
 		c.HTML(http.StatusOK, "index.html", nil)
+	})
+	router.GET("/admin", func(c *ginext.Context) {
+		c.HTML(http.StatusOK, "admin.html", nil)
+	})
+	router.GET("/user", func(c *ginext.Context) {
+		c.HTML(http.StatusOK, "user.html", nil)
 	})
 
 	return router
@@ -45,12 +52,18 @@ func (h *Handler) CreateEvent(c *ginext.Context) {
 		return
 	}
 
+	date, err := time.Parse(time.RFC3339, req.Date)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, ginext.H{"error": "invalid date format, must be RFC3339"})
+		return
+	}
+
 	event := model.Event{
 		Name:       req.Name,
-		Date:       req.Date,
+		Date:       date,
 		Capacity:   req.Capacity,
 		FreeSeats:  req.Capacity,
-		PaymentTTL: req.PaymentTTL,
+		PaymentTTL: req.PaymentTTL * 60, // convert minutes → seconds
 	}
 
 	if err := h.service.CreateEvent(c.Request.Context(), &event); err != nil {
@@ -61,7 +74,7 @@ func (h *Handler) CreateEvent(c *ginext.Context) {
 	c.JSON(http.StatusCreated, dto.EventResponse{
 		ID:        event.ID,
 		Name:      event.Name,
-		Date:      event.Date,
+		Date:      event.Date.Format(time.RFC3339),
 		Capacity:  event.Capacity,
 		FreeSeats: event.FreeSeats,
 	})
@@ -91,8 +104,8 @@ func (h *Handler) BookEvent(c *ginext.Context) {
 		EventID:   booking.EventID,
 		Seats:     booking.Seats,
 		Paid:      booking.Paid,
-		CreatedAt: booking.CreatedAt,
-		ExpiresAt: booking.ExpiresAt,
+		CreatedAt: booking.CreatedAt.Format(time.RFC3339),
+		ExpiresAt: booking.ExpiresAt.Format(time.RFC3339),
 	})
 }
 
@@ -103,8 +116,9 @@ func (h *Handler) ConfirmBooking(c *ginext.Context) {
 		return
 	}
 
-	if err := h.service.ConfirmBooking(bookingID); err != nil {
-		c.JSON(http.StatusInternalServerError, ginext.H{"error": err.Error()})
+	err = h.service.ConfirmBooking(bookingID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, ginext.H{"error": "booking not found"})
 		return
 	}
 
@@ -127,7 +141,7 @@ func (h *Handler) GetEvent(c *ginext.Context) {
 	c.JSON(http.StatusOK, dto.EventResponse{
 		ID:        event.ID,
 		Name:      event.Name,
-		Date:      event.Date,
+		Date:      event.Date.Format(time.RFC3339),
 		Capacity:  event.Capacity,
 		FreeSeats: event.FreeSeats,
 	})
@@ -140,7 +154,18 @@ func (h *Handler) GetEvents(c *ginext.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, events)
+	resp := make([]dto.EventResponse, 0, len(events))
+	for _, e := range events {
+		resp = append(resp, dto.EventResponse{
+			ID:        e.ID,
+			Name:      e.Name,
+			Date:      e.Date.Format(time.RFC3339),
+			Capacity:  e.Capacity,
+			FreeSeats: e.FreeSeats,
+		})
+	}
+
+	c.JSON(http.StatusOK, resp)
 }
 
 func (h *Handler) GetEventBookings(c *ginext.Context) {
@@ -156,5 +181,17 @@ func (h *Handler) GetEventBookings(c *ginext.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, bookings)
+	resp := make([]dto.BookingResponse, 0, len(bookings))
+	for _, b := range bookings {
+		resp = append(resp, dto.BookingResponse{
+			ID:        b.ID,
+			EventID:   b.EventID,
+			Seats:     b.Seats,
+			Paid:      b.Paid,
+			CreatedAt: b.CreatedAt.Format(time.RFC3339),
+			ExpiresAt: b.ExpiresAt.Format(time.RFC3339),
+		})
+	}
+
+	c.JSON(http.StatusOK, resp)
 }
