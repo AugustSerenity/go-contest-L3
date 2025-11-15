@@ -5,4 +5,6 @@ CREATE TABLE bookings (
     paid BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT now(),
     expires_at TIMESTAMP NOT NULL
-);
+);  
+
+

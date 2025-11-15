@@ -1,7 +1,7 @@
 package main
 
 import (
-	"time" 
+	"time"
 
 	"github.com/AugustSerenity/go-contest-L3/l3.5_EventBooker/internal/config"
 	"github.com/AugustSerenity/go-contest-L3/l3.5_EventBooker/internal/handler"
@@ -47,12 +47,9 @@ func startExpiredBookingWorker(srv *service.Service) {
 	ticker := time.NewTicker(1 * time.Minute)
 	defer ticker.Stop()
 
-	for {
-		select {
-		case <-ticker.C:
-			if err := cancelExpiredBookings(srv); err != nil {
-				zlog.Logger.Error().Err(err).Msg("failed to cancel expired bookings")
-			}
+	for range ticker.C {
+		if err := cancelExpiredBookings(srv); err != nil {
+			zlog.Logger.Error().Err(err).Msg("failed to cancel expired bookings")
 		}
 	}
 }

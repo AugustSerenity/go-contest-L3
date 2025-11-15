@@ -19,7 +19,7 @@ func (st *Storage) CreateEvent(ctx context.Context, e *model.Event) error {
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	row := tx.QueryRowContext(ctx, `
 		INSERT INTO events (name, date, capacity, free_seats, payment_ttl, created_at, updated_at)
@@ -30,6 +30,7 @@ func (st *Storage) CreateEvent(ctx context.Context, e *model.Event) error {
 	if err = row.Scan(&e.ID); err != nil {
 		return err
 	}
+
 	return tx.Commit()
 }
 
@@ -80,7 +81,7 @@ func (st *Storage) BookEvent(ctx context.Context, eventId, seats int, ttl time.D
 	if err != nil {
 		return nil, err
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	var free int
 	err = tx.QueryRowContext(ctx, `SELECT free_seats FROM events WHERE id=$1 FOR UPDATE`, eventId).
@@ -117,7 +118,6 @@ func (st *Storage) BookEvent(ctx context.Context, eventId, seats int, ttl time.D
 	_, err = tx.ExecContext(ctx, `
 		UPDATE events SET free_seats = free_seats - $1 WHERE id=$2
 	`, seats, eventId)
-
 	if err != nil {
 		return nil, err
 	}
@@ -143,13 +143,21 @@ func (st *Storage) CancelExpiredBookings(ctx context.Context) error {
 	var ids []int
 	for rows.Next() {
 		var id int
-		rows.Scan(&id)
+		if err := rows.Scan(&id); err != nil {
+			return err
+		}
 		ids = append(ids, id)
 	}
 
 	for _, id := range ids {
 		zlog.Logger.Warn().Int("booking", id).Msg("auto-cancel expired booking")
-		st.CancelBooking(ctx, id)
+
+		if err := st.CancelBooking(ctx, id); err != nil {
+			zlog.Logger.Error().
+				Err(err).
+				Int("booking", id).
+				Msg("failed to cancel expired booking")
+		}
 	}
 
 	return nil
@@ -160,7 +168,7 @@ func (st *Storage) CancelBooking(ctx context.Context, id int) error {
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	var eventId, seats int
 	err = tx.QueryRowContext(ctx, `
@@ -181,7 +189,6 @@ func (st *Storage) CancelBooking(ctx context.Context, id int) error {
 	_, err = tx.ExecContext(ctx, `
 		UPDATE events SET free_seats = free_seats + $1 WHERE id=$2
 	`, seats, eventId)
-
 	if err != nil {
 		return err
 	}
