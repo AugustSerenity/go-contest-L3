@@ -7,4 +7,5 @@ import (
 
 type Storage interface {
 	SaveItem(*ginext.Context, model.Item) (model.Item, error)
+	AnalyticsCalculate(c *ginext.Context, filter model.ItemsFilter) (model.AnalyticsResponse, error)
 }

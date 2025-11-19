@@ -25,3 +25,7 @@ func (s *Service) CreateItem(c *ginext.Context, item model.Item) (model.Item, er
 
 	return data, nil
 }
+
+func (s *Service) GetAnalytics(c *ginext.Context, filter model.ItemsFilter) (model.AnalyticsResponse, error) {
+	return s.storage.AnalyticsCalculate(c, filter)
+}

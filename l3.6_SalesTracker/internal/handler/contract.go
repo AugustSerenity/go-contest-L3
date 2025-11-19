@@ -7,4 +7,5 @@ import (
 
 type Service interface {
 	CreateItem(*ginext.Context, model.Item) (model.Item, error)
+	GetAnalytics(*ginext.Context, model.ItemsFilter) (model.AnalyticsResponse, error)
 }
