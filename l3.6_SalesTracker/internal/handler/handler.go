@@ -30,6 +30,11 @@ func (h *Handler) Router() *ginext.Engine {
 	router.PUT("/items/:id", h.UpdateItem)
 	router.DELETE("/items/:id", h.DeleteItem)
 
+	router.Static("/static", "./web")
+	router.GET("/", func(c *ginext.Context) {
+		c.File("./web/index.html")
+	})
+
 	return router
 }
 
