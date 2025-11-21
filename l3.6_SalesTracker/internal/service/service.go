@@ -29,3 +29,15 @@ func (s *Service) CreateItem(c *ginext.Context, item model.Item) (model.Item, er
 func (s *Service) GetAnalytics(c *ginext.Context, filter model.ItemsFilter) (model.AnalyticsResponse, error) {
 	return s.storage.AnalyticsCalculate(c, filter)
 }
+
+func (s *Service) GetItems(c *ginext.Context, filter model.ItemsFilter) ([]model.Item, error) {
+	return s.storage.GetItems(c, filter)
+}
+
+func (s *Service) UpdateItem(c *ginext.Context, item model.Item) (model.Item, error) {
+	return s.storage.UpdateItem(c, item)
+}
+
+func (s *Service) DeleteItem(c *ginext.Context, id int64) error {
+	return s.storage.DeleteItem(c, id)
+}

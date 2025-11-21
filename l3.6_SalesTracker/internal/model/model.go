@@ -30,4 +30,6 @@ type ItemsFilter struct {
 	From     *time.Time
 	To       *time.Time
 	Category *string
+	Limit    *int
+	Offset   *int
 }

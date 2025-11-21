@@ -7,5 +7,8 @@ import (
 
 type Storage interface {
 	SaveItem(*ginext.Context, model.Item) (model.Item, error)
-	AnalyticsCalculate(c *ginext.Context, filter model.ItemsFilter) (model.AnalyticsResponse, error)
+	AnalyticsCalculate(*ginext.Context, model.ItemsFilter) (model.AnalyticsResponse, error)
+	GetItems(*ginext.Context, model.ItemsFilter) ([]model.Item, error)
+	UpdateItem(*ginext.Context, model.Item) (model.Item, error)
+	DeleteItem(*ginext.Context, int64) error
 }
