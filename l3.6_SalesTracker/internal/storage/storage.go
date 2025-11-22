@@ -71,6 +71,7 @@ func (st *Storage) AnalyticsCalculate(c *ginext.Context, filter model.ItemsFilte
 		args = append(args, *filter.Category)
 		argCounter++
 	}
+	_ = argCounter
 
 	var response model.AnalyticsResponse
 	err := st.db.Master.QueryRow(query, args...).Scan(
@@ -118,6 +119,8 @@ func (st *Storage) GetItems(c *ginext.Context, filter model.ItemsFilter) ([]mode
 		args = append(args, *filter.Offset)
 		argCounter++
 	}
+
+	_ = argCounter
 
 	rows, err := st.db.Master.Query(query, args...)
 	if err != nil {

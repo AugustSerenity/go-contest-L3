@@ -1,4 +1,4 @@
-const apiBase = ""; 
+const apiBase = "";
 
 // --- Create Item ---
 document.getElementById("item-form").addEventListener("submit", async (e) => {
@@ -21,10 +21,9 @@ document.getElementById("item-form").addEventListener("submit", async (e) => {
         form.reset();
         loadItems();
         loadAnalytics();
-    } else {
-        alert("Error creating item");
-    }
+    } else alert("Error creating item");
 });
+
 
 // --- Load Items ---
 async function loadItems() {
@@ -41,6 +40,7 @@ async function loadItems() {
 
     const tbody = document.getElementById("items-table-body");
     tbody.innerHTML = "";
+
     items.forEach(it => {
         const tr = document.createElement("tr");
         tr.innerHTML = `
@@ -58,7 +58,7 @@ async function loadItems() {
         tbody.appendChild(tr);
     });
 
-    // Update handlers
+    // --- Update ---
     document.querySelectorAll(".update-btn").forEach(btn => {
         btn.onclick = async () => {
             const id = btn.dataset.id;
@@ -67,8 +67,8 @@ async function loadItems() {
 
             tr.querySelectorAll("[contenteditable]").forEach(td => {
                 const field = td.dataset.field;
-                if (field === "amount") updateData[field] = parseFloat(td.innerText);
-                else updateData[field] = td.innerText;
+                updateData[field] =
+                    field === "amount" ? parseFloat(td.innerText) : td.innerText;
             });
 
             const res = await fetch(`${apiBase}/items/${id}`, {
@@ -76,6 +76,7 @@ async function loadItems() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(updateData)
             });
+
             if (res.ok) {
                 loadItems();
                 loadAnalytics();
@@ -83,7 +84,7 @@ async function loadItems() {
         };
     });
 
-    // Delete handlers
+    // --- Delete ---
     document.querySelectorAll(".delete-btn").forEach(btn => {
         btn.onclick = async () => {
             const id = btn.dataset.id;
@@ -98,10 +99,6 @@ async function loadItems() {
     });
 }
 
-document.getElementById("filter-form").addEventListener("submit", (e) => {
-    e.preventDefault();
-    loadItems();
-});
 
 // --- Analytics ---
 async function loadAnalytics() {
@@ -115,6 +112,7 @@ async function loadAnalytics() {
     if (!res.ok) return;
 
     const data = await res.json();
+
     document.getElementById("analytics-result").innerHTML = `
         <p><b>Sum:</b> ${data.sum}</p>
         <p><b>Avg:</b> ${data.avg}</p>
@@ -124,39 +122,17 @@ async function loadAnalytics() {
     `;
 }
 
-// --- Quick Action Buttons ---
-document.getElementById("btn-load-items").onclick = loadItems;
-document.getElementById("btn-load-analytics").onclick = loadAnalytics;
 
-document.getElementById("btn-generate-sample").onclick = async () => {
-    const samples = [
-        {type:"sale", category:"tech", amount:100, date:"2024-01-10"},
-        {type:"sale", category:"books", amount:50, date:"2024-01-11"},
-        {type:"refund", category:"tech", amount:30, date:"2024-01-11"},
-        {type:"sale", category:"tech", amount:200, date:"2024-01-12"}
-    ];
+// --- Auto-update analytics and items when filters change ---
+const filterForm = document.getElementById("filter-form");
 
-    for (const item of samples) {
-        await fetch(`${apiBase}/items`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(item)
-        });
-    }
-    loadItems();
-    loadAnalytics();
-};
+filterForm.querySelectorAll("input").forEach(input => {
+    input.addEventListener("input", () => {
+        loadItems();
+        loadAnalytics();
+    });
+});
 
-document.getElementById("btn-clear-all").onclick = async () => {
-    const res = await fetch(`${apiBase}/items`);
-    const items = await res.json();
-
-    for (const it of items) {
-        await fetch(`${apiBase}/items/${it.ID}`, {method:"DELETE"});
-    }
-    loadItems();
-    loadAnalytics();
-};
 
 // --- Initial load ---
 loadItems();
