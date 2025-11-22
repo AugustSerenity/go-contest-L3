@@ -19,7 +19,6 @@ document.getElementById("item-form").addEventListener("submit", async (e) => {
 
     if (res.ok) {
         form.reset();
-        alert("Item created!");
         loadItems();
         loadAnalytics();
     } else {
@@ -31,11 +30,11 @@ document.getElementById("item-form").addEventListener("submit", async (e) => {
 async function loadItems() {
     const form = document.getElementById("filter-form");
     const params = new URLSearchParams();
-    if(form.from.value) params.append("from", form.from.value);
-    if(form.to.value) params.append("to", form.to.value);
-    if(form.category.value) params.append("category", form.category.value);
-    if(form.limit.value) params.append("limit", form.limit.value);
-    if(form.offset.value) params.append("offset", form.offset.value);
+    if (form.from.value) params.append("from", form.from.value);
+    if (form.to.value) params.append("to", form.to.value);
+    if (form.category.value) params.append("category", form.category.value);
+    if (form.limit.value) params.append("limit", form.limit.value);
+    if (form.offset.value) params.append("offset", form.offset.value);
 
     const res = await fetch(`${apiBase}/items?${params.toString()}`);
     const items = await res.json();
@@ -45,29 +44,30 @@ async function loadItems() {
     items.forEach(it => {
         const tr = document.createElement("tr");
         tr.innerHTML = `
-            <td>${it.ID || it.id}</td>
-            <td contenteditable="true" data-field="type">${it.Type || it.type}</td>
-            <td contenteditable="true" data-field="category">${it.Category || it.category}</td>
-            <td contenteditable="true" data-field="amount">${it.Amount || it.amount}</td>
-            <td contenteditable="true" data-field="date">${(it.Date || it.date).slice(0,10)}</td>
-            <td>${(it.CreatedAt || it.createdAt).slice(0,10)}</td>
+            <td>${it.ID}</td>
+            <td contenteditable="true" data-field="type">${it.Type}</td>
+            <td contenteditable="true" data-field="category">${it.Category}</td>
+            <td contenteditable="true" data-field="amount">${it.Amount}</td>
+            <td contenteditable="true" data-field="date">${it.Date.slice(0, 10)}</td>
+            <td>${it.CreatedAt.slice(0, 10)}</td>
             <td>
-                <button class="update-btn" data-id="${it.ID || it.id}">Update</button>
-                <button class="delete-btn" data-id="${it.ID || it.id}">Delete</button>
+                <button class="update-btn" data-id="${it.ID}">Update</button>
+                <button class="delete-btn" data-id="${it.ID}">Delete</button>
             </td>
         `;
         tbody.appendChild(tr);
     });
 
-    // Update & Delete handlers
+    // Update handlers
     document.querySelectorAll(".update-btn").forEach(btn => {
         btn.onclick = async () => {
             const id = btn.dataset.id;
             const tr = btn.closest("tr");
             const updateData = {};
+
             tr.querySelectorAll("[contenteditable]").forEach(td => {
                 const field = td.dataset.field;
-                if(field === "amount") updateData[field] = parseFloat(td.innerText);
+                if (field === "amount") updateData[field] = parseFloat(td.innerText);
                 else updateData[field] = td.innerText;
             });
 
@@ -76,21 +76,20 @@ async function loadItems() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(updateData)
             });
-            if(res.ok) {
-                alert("Item updated");
+            if (res.ok) {
                 loadItems();
                 loadAnalytics();
             } else alert("Error updating item");
         };
     });
 
+    // Delete handlers
     document.querySelectorAll(".delete-btn").forEach(btn => {
         btn.onclick = async () => {
             const id = btn.dataset.id;
-            if(confirm("Delete this item?")) {
+            if (confirm("Delete this item?")) {
                 const res = await fetch(`${apiBase}/items/${id}`, { method: "DELETE" });
-                if(res.ok) {
-                    alert("Deleted");
+                if (res.ok) {
                     loadItems();
                     loadAnalytics();
                 } else alert("Error deleting item");
@@ -99,7 +98,6 @@ async function loadItems() {
     });
 }
 
-// --- Filters form ---
 document.getElementById("filter-form").addEventListener("submit", (e) => {
     e.preventDefault();
     loadItems();
@@ -109,22 +107,56 @@ document.getElementById("filter-form").addEventListener("submit", (e) => {
 async function loadAnalytics() {
     const form = document.getElementById("filter-form");
     const params = new URLSearchParams();
-    if(form.from.value) params.append("from", form.from.value);
-    if(form.to.value) params.append("to", form.to.value);
-    if(form.category.value) params.append("category", form.category.value);
+    if (form.from.value) params.append("from", form.from.value);
+    if (form.to.value) params.append("to", form.to.value);
+    if (form.category.value) params.append("category", form.category.value);
 
     const res = await fetch(`${apiBase}/analytics?${params.toString()}`);
-    if(!res.ok) return;
-    const data = await res.json();
+    if (!res.ok) return;
 
+    const data = await res.json();
     document.getElementById("analytics-result").innerHTML = `
-        <p>Sum: ${data.sum}</p>
-        <p>Avg: ${data.avg}</p>
-        <p>Median: ${data.median}</p>
-        <p>P90: ${data.p90}</p>
-        <p>Count: ${data.count}</p>
+        <p><b>Sum:</b> ${data.sum}</p>
+        <p><b>Avg:</b> ${data.avg}</p>
+        <p><b>Median:</b> ${data.median}</p>
+        <p><b>P90:</b> ${data.p90}</p>
+        <p><b>Count:</b> ${data.count}</p>
     `;
 }
+
+// --- Quick Action Buttons ---
+document.getElementById("btn-load-items").onclick = loadItems;
+document.getElementById("btn-load-analytics").onclick = loadAnalytics;
+
+document.getElementById("btn-generate-sample").onclick = async () => {
+    const samples = [
+        {type:"sale", category:"tech", amount:100, date:"2024-01-10"},
+        {type:"sale", category:"books", amount:50, date:"2024-01-11"},
+        {type:"refund", category:"tech", amount:30, date:"2024-01-11"},
+        {type:"sale", category:"tech", amount:200, date:"2024-01-12"}
+    ];
+
+    for (const item of samples) {
+        await fetch(`${apiBase}/items`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(item)
+        });
+    }
+    loadItems();
+    loadAnalytics();
+};
+
+document.getElementById("btn-clear-all").onclick = async () => {
+    const res = await fetch(`${apiBase}/items`);
+    const items = await res.json();
+
+    for (const it of items) {
+        await fetch(`${apiBase}/items/${it.ID}`, {method:"DELETE"});
+    }
+    loadItems();
+    loadAnalytics();
+};
 
 // --- Initial load ---
 loadItems();
