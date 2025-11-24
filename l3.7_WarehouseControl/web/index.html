@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<body>
+  <h1>Warehouse</h1>
+
+  <select id="role">
+    <option value="admin">Admin</option>
+    <option value="manager">Manager</option>
+    <option value="viewer">Viewer</option>
+  </select>
+
+  <button onclick="login()">Login</button>
+
+  <h2>Items</h2>
+  <button onclick="loadItems()">Reload</button>
+  <pre id="items"></pre>
+
+  <script>
+    let token = ""
+
+    function login() {
+        let role = document.getElementById("role").value
+        fetch("/login", {
+            method: "POST",
+            body: JSON.stringify({username: role, password: "x"})
+        }).then(r=>r.json()).then(d => {
+            token = d.token
+            alert("Logged as "+role)
+        })
+    }
+
+    function loadItems() {
+      fetch("/items", {
+        headers: {Authorization: "Bearer "+token}
+      }).then(r=>r.json()).then(d=>{
+        document.getElementById("items").textContent = JSON.stringify(d, null, 2)
+      })
+    }
+  </script>
+</body>
+</html>

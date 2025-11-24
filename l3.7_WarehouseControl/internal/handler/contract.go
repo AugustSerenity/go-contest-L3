@@ -1,3 +1,5 @@
 package handler
 
-type Service interface{}
+type Service interface {
+	CreateItem(string, string, int) error
+}
