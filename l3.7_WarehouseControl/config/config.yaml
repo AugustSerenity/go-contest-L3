@@ -5,8 +5,8 @@ server:
   shutdown_timeout: 10s
 
 db:
-  host: "localhost" # "postgres-service"  
+  host: "postgres-service" #"localhost" 
   port: 5432               
   username: "postgres"
-  name: "sales_tracker"
+  name: "warehouse_control"
   password: "postgres"

@@ -34,19 +34,25 @@ func (st *Storage) ListItems() ([]model.Item, error) {
 }
 
 func (st *Storage) CreateItem(name string, qty int, username string) error {
-	st.db.Master.Exec("SET app.user = '" + username + "'")
+	if _, err := st.db.Master.Exec("SET app.user = $1", username); err != nil {
+		return err
+	}
 	_, err := st.db.Master.Exec(`INSERT INTO items(name, quantity) VALUES($1,$2)`, name, qty)
 	return err
 }
 
 func (s *Storage) UpdateItem(id int, name string, qty int, username string) error {
-	s.db.Master.Exec("SET app.user = '" + username + "'")
+	if _, err := s.db.Master.Exec("SET app.user = $1", username); err != nil {
+		return err
+	}
 	_, err := s.db.Master.Exec(`UPDATE items SET name=$1, quantity=$2 WHERE id=$3`, name, qty, id)
 	return err
 }
 
 func (st *Storage) DeleteItem(id int, username string) error {
-	st.db.Master.Exec("SET app.user = '" + username + "'")
+	if _, err := st.db.Master.Exec("SET app.user = $1", username); err != nil {
+		return err
+	}
 	_, err := st.db.Master.Exec(`DELETE FROM items WHERE id=$1`, id)
 	return err
 }
