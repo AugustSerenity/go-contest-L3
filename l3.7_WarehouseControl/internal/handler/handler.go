@@ -1,6 +1,12 @@
 package handler
 
-import "github.com/wb-go/wbf/ginext"
+import (
+	"strconv"
+
+	"github.com/AugustSerenity/go-contest-L3/l3.7_WarehouseControl/internal/handler/dto"
+	"github.com/AugustSerenity/go-contest-L3/l3.7_WarehouseControl/internal/middlerware"
+	"github.com/wb-go/wbf/ginext"
+)
 
 type Handler struct {
 	service Service
@@ -10,22 +16,120 @@ func New(s Service) *Handler {
 	return &Handler{
 		service: s,
 	}
+
 }
 
 func (h *Handler) Router() *ginext.Engine {
-	router := ginext.New("release")
-	router.Use(ginext.Logger(), ginext.Recovery())
+	r := ginext.New("debug")
 
-	router.POST("/items", h.CreateItem)
+	r.Use(ginext.Logger(), ginext.Recovery())
 
-	router.Static("/static", "./web")
-	router.GET("/", func(c *ginext.Context) {
-		c.File("./web/index.html")
-	})
+	api := r.Group("/")
 
-	return router
+	api.POST("/login", h.Login)
+
+	items := api.Group("/items")
+
+	items.GET("", middlerware.Auth("admin", "manager", "viewer"), h.List)
+	items.POST("", middlerware.Auth("admin", "manager"), h.Create)
+	items.PUT("/:id", middlerware.Auth("admin", "manager"), h.Update)
+	items.DELETE("/:id", middlerware.Auth("admin"), h.Delete)
+	items.GET("/:id/history", middlerware.Auth("admin", "manager", "viewer"), h.History)
+
+	return r
 }
 
-func (h *Handler) CreateItem(c *ginext.Context) {
-	
+func (h *Handler) Login(c *ginext.Context) {
+	var req dto.LoginRequest
+	if err := c.BindJSON(&req); err != nil {
+		c.JSON(400, ginext.H{"error": err.Error()})
+		return
+	}
+
+	token, _ := middlerware.GenerateToken(req.Username, "admin")
+
+	c.JSON(200, ginext.H{"token": token})
+}
+
+func (h *Handler) List(c *ginext.Context) {
+	res, err := h.service.ListItems()
+	if err != nil {
+		c.JSON(500, ginext.H{"error": err.Error()})
+		return
+	}
+	c.JSON(200, res)
+}
+
+func (h *Handler) Create(c *ginext.Context) {
+	var req dto.CreateItemRequest
+	if err := c.BindJSON(&req); err != nil {
+		c.JSON(400, ginext.H{"error": err.Error()})
+		return
+	}
+
+	username := c.GetString("user")
+
+	err := h.service.CreateItem(username, req.Name, req.Quantity)
+	if err != nil {
+		c.JSON(500, ginext.H{"error": err.Error()})
+		return
+	}
+
+	c.Status(200)
+}
+
+func (h *Handler) Update(c *ginext.Context) {
+	var req dto.UpdateItemRequest
+	if err := c.BindJSON(&req); err != nil {
+		c.JSON(400, ginext.H{"error": err.Error()})
+		return
+	}
+
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(400, ginext.H{"error": "invalid id"})
+		return
+	}
+
+	username := c.GetString("user")
+
+	if err := h.service.UpdateItem(username, id, req.Name, req.Quantity); err != nil {
+		c.JSON(500, ginext.H{"error": err.Error()})
+		return
+	}
+
+	c.Status(200)
+}
+
+func (h *Handler) Delete(c *ginext.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(400, ginext.H{"error": "invalid id"})
+		return
+	}
+
+	username := c.GetString("user")
+
+	if err := h.service.DeleteItem(username, id); err != nil {
+		c.JSON(500, ginext.H{"error": err.Error()})
+		return
+	}
+
+	c.Status(200)
+}
+
+func (h *Handler) History(c *ginext.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(400, ginext.H{"error": "invalid id"})
+		return
+	}
+
+	res, err := h.service.GetHistory(id)
+	if err != nil {
+		c.JSON(500, ginext.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(200, res)
 }

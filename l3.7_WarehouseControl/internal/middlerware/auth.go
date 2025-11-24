@@ -8,7 +8,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-var JwtSecret = []byte("SUPER_SECRET")
+var JwtSecret = []byte("secret")
 
 func Auth(requiredRoles ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -53,4 +53,14 @@ func Auth(requiredRoles ...string) gin.HandlerFunc {
 
 		c.Next()
 	}
+}
+
+func GenerateToken(username, role string) (string, error) {
+	claims := jwt.MapClaims{
+		"username": username,
+		"role":     role,
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString(JwtSecret)
 }

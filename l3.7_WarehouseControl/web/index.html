@@ -1,41 +1,177 @@
 <!DOCTYPE html>
 <html>
+<head>
+  <meta charset="UTF-8">
+  <title>WarehouseControl</title>
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    button { margin: 4px; }
+    input { margin: 4px; }
+    .item-block { padding: 10px; border: 1px solid #ddd; margin-bottom: 10px; }
+  </style>
+</head>
 <body>
-  <h1>Warehouse</h1>
 
-  <select id="role">
-    <option value="admin">Admin</option>
-    <option value="manager">Manager</option>
-    <option value="viewer">Viewer</option>
-  </select>
+<h1>WarehouseControl</h1>
 
-  <button onclick="login()">Login</button>
+<!-- LOGIN -->
+<h2>Login</h2>
+<select id="role">
+  <option value="admin">Admin</option>
+  <option value="manager">Manager</option>
+  <option value="viewer">Viewer</option>
+</select>
 
-  <h2>Items</h2>
-  <button onclick="loadItems()">Reload</button>
-  <pre id="items"></pre>
+<button onclick="login()">Login</button>
 
-  <script>
-    let token = ""
+<p id="loginStatus" style="color: green;"></p>
 
-    function login() {
-        let role = document.getElementById("role").value
-        fetch("/login", {
-            method: "POST",
-            body: JSON.stringify({username: role, password: "x"})
-        }).then(r=>r.json()).then(d => {
-            token = d.token
-            alert("Logged as "+role)
-        })
-    }
+<hr>
 
-    function loadItems() {
-      fetch("/items", {
-        headers: {Authorization: "Bearer "+token}
-      }).then(r=>r.json()).then(d=>{
-        document.getElementById("items").textContent = JSON.stringify(d, null, 2)
-      })
-    }
-  </script>
+<!-- ADD ITEM -->
+<div id="addItem" style="display:none;">
+  <h3>Add Item</h3>
+  <input id="newName" placeholder="Name">
+  <input id="newQty" placeholder="Quantity" type="number">
+  <button onclick="addItem()">Add</button>
+</div>
+
+<hr>
+
+<!-- ITEMS -->
+<h2>Items</h2>
+<button onclick="loadItems()">Reload</button>
+
+<div id="items"></div>
+
+<script>
+let token = ""
+let userRole = ""
+
+function login() {
+    let role = document.getElementById("role").value
+    userRole = role
+
+    fetch("/login", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({username: role, password: "x"})
+    })
+    .then(r => r.json())
+    .then(d => {
+        token = d.token
+        document.getElementById("loginStatus").textContent = "Logged in as: " + role
+
+        // показать кнопку Добавить только для ролей с правами
+        if (role === "admin" || role === "manager") {
+            document.getElementById("addItem").style.display = "block"
+        } else {
+            document.getElementById("addItem").style.display = "none"
+        }
+    })
+}
+
+function loadItems() {
+    fetch("/items", {
+        headers: {Authorization: "Bearer " + token}
+    })
+    .then(r => r.json())
+    .then(d => renderItems(d))
+}
+
+function renderItems(items) {
+    const container = document.getElementById("items")
+    container.innerHTML = ""
+
+    items.forEach(it => {
+        const div = document.createElement("div")
+        div.className = "item-block"
+
+        div.innerHTML = `
+            <b>ID:</b> ${it.id}<br>
+            <b>Name:</b> ${it.name}<br>
+            <b>Quantity:</b> ${it.quantity}<br>
+            <b>Updated:</b> ${it.updated_at}<br><br>
+        `
+
+        // HISTORY BUTTON
+        const historyBtn = document.createElement("button")
+        historyBtn.textContent = "History"
+        historyBtn.onclick = () => loadHistory(it.id)
+        div.appendChild(historyBtn)
+
+        // EDIT (admin, manager)
+        if (userRole === "admin" || userRole === "manager") {
+            const editBtn = document.createElement("button")
+            editBtn.textContent = "Edit"
+            editBtn.onclick = () => editItem(it)
+            div.appendChild(editBtn)
+        }
+
+        // DELETE (admin)
+        if (userRole === "admin") {
+            const delBtn = document.createElement("button")
+            delBtn.textContent = "Delete"
+            delBtn.onclick = () => deleteItem(it.id)
+            div.appendChild(delBtn)
+        }
+
+        container.appendChild(div)
+    })
+}
+
+function addItem() {
+    const name = document.getElementById("newName").value
+    const qty = parseInt(document.getElementById("newQty").value)
+
+    fetch("/items", {
+        method: "POST",
+        headers: {
+            Authorization: "Bearer " + token,
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({name, quantity: qty})
+    })
+    .then(() => loadItems())
+}
+
+function editItem(item) {
+    const newName = prompt("New name:", item.name)
+    const newQty = parseInt(prompt("New qty:", item.quantity))
+
+    if (!newName || isNaN(newQty)) return
+
+    fetch("/items/" + item.id, {
+        method: "PUT",
+        headers: {
+            Authorization: "Bearer " + token,
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({name: newName, quantity: newQty})
+    })
+    .then(() => loadItems())
+}
+
+function deleteItem(id) {
+    if (!confirm("Delete item?")) return
+
+    fetch("/items/" + id, {
+        method: "DELETE",
+        headers: {Authorization: "Bearer " + token}
+    })
+    .then(() => loadItems())
+}
+
+function loadHistory(id) {
+    fetch("/items/" + id + "/history", {
+        headers: {Authorization: "Bearer " + token}
+    })
+    .then(r => r.json())
+    .then(data => {
+        alert("History:\n\n" + JSON.stringify(data, null, 2))
+    })
+}
+</script>
+
 </body>
 </html>

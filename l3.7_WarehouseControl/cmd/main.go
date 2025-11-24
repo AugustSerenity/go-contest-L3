@@ -1,7 +1,9 @@
 package main
- 
+
 import (
 	"github.com/AugustSerenity/go-contest-L3/l3.7_WarehouseControl/internal/config"
+	"github.com/AugustSerenity/go-contest-L3/l3.7_WarehouseControl/internal/handler"
+	"github.com/AugustSerenity/go-contest-L3/l3.7_WarehouseControl/internal/service"
 	"github.com/AugustSerenity/go-contest-L3/l3.7_WarehouseControl/internal/storage"
 	"github.com/wb-go/wbf/zlog"
 )
