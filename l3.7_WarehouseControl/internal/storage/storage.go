@@ -34,24 +34,25 @@ func (st *Storage) ListItems() ([]model.Item, error) {
 }
 
 func (st *Storage) CreateItem(name string, qty int, username string) error {
-	if _, err := st.db.Master.Exec(fmt.Sprintf("SET \"app.user\" = '%s'", username)); err != nil {
+	// Устанавливаем правильную переменную для триггера
+	if _, err := st.db.Master.Exec(fmt.Sprintf("SET \"myapp.current_user\" = '%s'", username)); err != nil {
 		return err
 	}
 	_, err := st.db.Master.Exec(`INSERT INTO items(name, quantity) VALUES($1,$2)`, name, qty)
 	return err
 }
 
-func (s *Storage) UpdateItem(id int, name string, qty int, username string) error {
-	if _, err := s.db.Master.Exec(fmt.Sprintf("SET \"app.user\" = '%s'", username)); err != nil {
+func (st *Storage) UpdateItem(id int, name string, qty int, username string) error {
+	if _, err := st.db.Master.Exec(fmt.Sprintf("SET \"myapp.current_user\" = '%s'", username)); err != nil {
 		return err
 	}
-	_, err := s.db.Master.Exec(`UPDATE items SET name=$1, quantity=$2 WHERE id=$3`,
+	_, err := st.db.Master.Exec(`UPDATE items SET name=$1, quantity=$2 WHERE id=$3`,
 		name, qty, id)
 	return err
 }
 
 func (st *Storage) DeleteItem(id int, username string) error {
-	if _, err := st.db.Master.Exec(fmt.Sprintf("SET \"app.user\" = '%s'", username)); err != nil {
+	if _, err := st.db.Master.Exec(fmt.Sprintf("SET \"myapp.current_user\" = '%s'", username)); err != nil {
 		return err
 	}
 	_, err := st.db.Master.Exec(`DELETE FROM items WHERE id=$1`, id)

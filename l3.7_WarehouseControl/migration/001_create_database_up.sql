@@ -32,8 +32,13 @@ CREATE TABLE IF NOT EXISTS item_history (
 CREATE OR REPLACE FUNCTION trg_log_item_history()
 RETURNS TRIGGER AS $$
 DECLARE
-    username TEXT := current_setting('myapp.current_user', true);
+    username TEXT;
 BEGIN
+    username := current_setting('myapp.current_user', true);
+    IF username IS NULL THEN
+        username := 'system';
+    END IF;
+
     IF TG_OP = 'INSERT' THEN
         INSERT INTO item_history(item_id, action, changed_by, old_data, new_data)
         VALUES (NEW.id, 'INSERT', username, NULL, to_jsonb(NEW));
@@ -47,6 +52,7 @@ BEGIN
         VALUES (OLD.id, 'DELETE', username, to_jsonb(OLD), NULL);
         RETURN OLD;
     END IF;
+
     RETURN NULL;
 END;
 $$ LANGUAGE plpgsql;
