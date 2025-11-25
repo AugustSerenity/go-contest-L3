@@ -1,6 +1,8 @@
 package storage
 
 import (
+	"fmt"
+
 	"github.com/AugustSerenity/go-contest-L3/l3.7_WarehouseControl/internal/model"
 	"github.com/wb-go/wbf/dbpg"
 )
@@ -10,9 +12,7 @@ type Storage struct {
 }
 
 func New(db *dbpg.DB) *Storage {
-	return &Storage{
-		db: db,
-	}
+	return &Storage{db: db}
 }
 
 func (st *Storage) ListItems() ([]model.Item, error) {
@@ -34,7 +34,7 @@ func (st *Storage) ListItems() ([]model.Item, error) {
 }
 
 func (st *Storage) CreateItem(name string, qty int, username string) error {
-	if _, err := st.db.Master.Exec("SET app.user = $1", username); err != nil {
+	if _, err := st.db.Master.Exec(fmt.Sprintf("SET \"app.user\" = '%s'", username)); err != nil {
 		return err
 	}
 	_, err := st.db.Master.Exec(`INSERT INTO items(name, quantity) VALUES($1,$2)`, name, qty)
@@ -42,15 +42,16 @@ func (st *Storage) CreateItem(name string, qty int, username string) error {
 }
 
 func (s *Storage) UpdateItem(id int, name string, qty int, username string) error {
-	if _, err := s.db.Master.Exec("SET app.user = $1", username); err != nil {
+	if _, err := s.db.Master.Exec(fmt.Sprintf("SET \"app.user\" = '%s'", username)); err != nil {
 		return err
 	}
-	_, err := s.db.Master.Exec(`UPDATE items SET name=$1, quantity=$2 WHERE id=$3`, name, qty, id)
+	_, err := s.db.Master.Exec(`UPDATE items SET name=$1, quantity=$2 WHERE id=$3`,
+		name, qty, id)
 	return err
 }
 
 func (st *Storage) DeleteItem(id int, username string) error {
-	if _, err := st.db.Master.Exec("SET app.user = $1", username); err != nil {
+	if _, err := st.db.Master.Exec(fmt.Sprintf("SET \"app.user\" = '%s'", username)); err != nil {
 		return err
 	}
 	_, err := st.db.Master.Exec(`DELETE FROM items WHERE id=$1`, id)
@@ -69,11 +70,12 @@ func (st *Storage) GetHistory(id int) ([]model.ItemHistory, error) {
 	var res []model.ItemHistory
 	for rows.Next() {
 		var h model.ItemHistory
-		if err := rows.Scan(&h.ID, &h.ItemID, &h.Action, &h.ChangedBy, &h.OldData, &h.NewData, &h.ChangedAt); err != nil {
+		if err := rows.Scan(
+			&h.ID, &h.ItemID, &h.Action, &h.ChangedBy,
+			&h.OldData, &h.NewData, &h.ChangedAt); err != nil {
 			return nil, err
 		}
 		res = append(res, h)
 	}
-
 	return res, nil
 }

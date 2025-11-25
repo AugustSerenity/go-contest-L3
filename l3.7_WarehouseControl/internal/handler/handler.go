@@ -23,13 +23,12 @@ func (h *Handler) Router() *ginext.Engine {
 	r := ginext.New("debug")
 
 	r.Use(ginext.Logger(), ginext.Recovery())
+	r.StaticFile("/", "./web/index.html")
 
 	api := r.Group("/")
-
 	api.POST("/login", h.Login)
 
 	items := api.Group("/items")
-
 	items.GET("", middlerware.Auth("admin", "manager", "viewer"), h.List)
 	items.POST("", middlerware.Auth("admin", "manager"), h.Create)
 	items.PUT("/:id", middlerware.Auth("admin", "manager"), h.Update)
@@ -46,7 +45,12 @@ func (h *Handler) Login(c *ginext.Context) {
 		return
 	}
 
-	token, _ := middlerware.GenerateToken(req.Username, "admin")
+	role := req.Username
+	token, err := middlerware.GenerateToken(req.Username, role)
+	if err != nil {
+		c.JSON(500, ginext.H{"error": "cannot generate token"})
+		return
+	}
 
 	c.JSON(200, ginext.H{"token": token})
 }

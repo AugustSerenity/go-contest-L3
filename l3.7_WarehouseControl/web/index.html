@@ -21,9 +21,7 @@
   <option value="manager">Manager</option>
   <option value="viewer">Viewer</option>
 </select>
-
 <button onclick="login()">Login</button>
-
 <p id="loginStatus" style="color: green;"></p>
 
 <hr>
@@ -41,13 +39,13 @@
 <!-- ITEMS -->
 <h2>Items</h2>
 <button onclick="loadItems()">Reload</button>
-
 <div id="items"></div>
 
 <script>
 let token = ""
 let userRole = ""
 
+// LOGIN FUNCTION
 function login() {
     let role = document.getElementById("role").value
     userRole = role
@@ -68,17 +66,26 @@ function login() {
         } else {
             document.getElementById("addItem").style.display = "none"
         }
+
+        loadItems()
     })
 }
 
+// LOAD ITEMS
 function loadItems() {
-    fetch("/items", {
-        headers: {Authorization: "Bearer " + token}
-    })
-    .then(r => r.json())
-    .then(d => renderItems(d))
+    let headers = {}
+    if (token) headers.Authorization = "Bearer " + token
+
+    fetch("/items", { headers })
+        .then(r => {
+            if (!r.ok) return []  // если нет прав
+            return r.json()
+        })
+        .then(d => renderItems(d))
+        .catch(() => renderItems([]))
 }
 
+// RENDER ITEMS
 function renderItems(items) {
     const container = document.getElementById("items")
     container.innerHTML = ""
@@ -120,9 +127,12 @@ function renderItems(items) {
     })
 }
 
+// ADD ITEM
 function addItem() {
     const name = document.getElementById("newName").value
     const qty = parseInt(document.getElementById("newQty").value)
+
+    if (!name || isNaN(qty)) return alert("Enter valid name and quantity")
 
     fetch("/items", {
         method: "POST",
@@ -135,6 +145,7 @@ function addItem() {
     .then(() => loadItems())
 }
 
+// EDIT ITEM
 function editItem(item) {
     const newName = prompt("New name:", item.name)
     const newQty = parseInt(prompt("New qty:", item.quantity))
@@ -152,6 +163,7 @@ function editItem(item) {
     .then(() => loadItems())
 }
 
+// DELETE ITEM
 function deleteItem(id) {
     if (!confirm("Delete item?")) return
 
@@ -162,6 +174,7 @@ function deleteItem(id) {
     .then(() => loadItems())
 }
 
+// LOAD HISTORY
 function loadHistory(id) {
     fetch("/items/" + id + "/history", {
         headers: {Authorization: "Bearer " + token}
